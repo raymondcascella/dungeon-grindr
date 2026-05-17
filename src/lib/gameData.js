@@ -1,0 +1,178 @@
+export const RECRUITS = [
+  { icon: '⚔️', name: 'Brunhilde', cls: 'Knight', hp: 18, atk: 5, flavor: 'Plate-clad and sworn to no flag but coin.' },
+  { icon: '🏹', name: 'Ysolde', cls: 'Ranger', hp: 12, atk: 6, flavor: 'Eyes like a hawk. Mood like a cornered one.' },
+  { icon: '🔮', name: 'Magister Vell', cls: 'Sorcerer', hp: 9, atk: 8, flavor: 'Speaks to no one, listens to everything.' },
+  { icon: '🗡️', name: 'Cutpurse Jin', cls: 'Rogue', hp: 11, atk: 5, flavor: 'Three knives. Two are decoys.' },
+  { icon: '🛡️', name: 'Brother Aldric', cls: 'Cleric', hp: 14, atk: 3, flavor: 'Heals the wounded. Judges the rest.' },
+  { icon: '🪓', name: 'Hrothgar', cls: 'Berserker', hp: 16, atk: 7, flavor: 'Has not slept indoors in a decade.' },
+  { icon: '🎭', name: 'The Mountebank', cls: 'Bard', hp: 10, atk: 4, flavor: 'Lies beautifully. Sings worse.' },
+  { icon: '🐺', name: 'Old Mungo', cls: 'Druid', hp: 13, atk: 5, flavor: 'Smells of wet fur and damp earth.' },
+  { icon: '⚗️', name: 'Pevra the Pale', cls: 'Alchemist', hp: 10, atk: 6, flavor: "Her satchel clinks. Don't ask why." },
+  { icon: '🦴', name: 'The Gravedigger', cls: 'Necromancer', hp: 11, atk: 7, flavor: 'Knows everyone here, somehow.' },
+  { icon: '🗝️', name: 'Felix the Lost', cls: 'Scholar', hp: 8, atk: 4, flavor: 'Has memorised three useless books.' },
+  { icon: '🌑', name: 'Veiled Lyra', cls: 'Assassin', hp: 10, atk: 8, flavor: 'You did not see her enter the tavern.' },
+];
+
+export const CLASS_POOLS = {
+  Knight: [
+    { kind: 'attack', emblem: '⚔️', name: 'Steel Cut',     dmg: 5, flavor: 'A clean swing.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Lunge',         dmg: 4, flavor: 'Plates clang. Steel finds gap.' },
+    { kind: 'attack', emblem: '⚔️', name: 'Pommel Strike', dmg: 3, flavor: 'Brutal but quick.' },
+    { kind: 'block',  emblem: '🛡️', name: 'Shield Wall',   block: 8, flavor: 'Nothing gets past.' },
+    { kind: 'special',emblem: '✨', name: "Knight's Oath", dmg: 10, cost: 1, flavor: 'Sworn duty made manifest.' },
+  ],
+  Ranger: [
+    { kind: 'attack', emblem: '🏹', name: 'Quick Shot',    dmg: 5, flavor: 'Loosed before the breath ends.' },
+    { kind: 'attack', emblem: '🏹', name: 'Pierce',        dmg: 6, flavor: 'Through the gap in the ribs.' },
+    { kind: 'attack', emblem: '🏹', name: 'Snap Shot',     dmg: 4, flavor: 'Half-drawn. Still lethal.' },
+    { kind: 'block',  emblem: '🌿', name: 'Fade Back',     block: 5, dodge: true, flavor: 'Gone before they swing.' },
+    { kind: 'special',emblem: '🎯', name: 'Heart-Seeker',  dmg: 12, cost: 1, flavor: 'One arrow. One end.' },
+  ],
+  Sorcerer: [
+    { kind: 'attack', emblem: '✨', name: 'Mote of Flame', dmg: 5, flavor: 'A guttering ember of will.' },
+    { kind: 'attack', emblem: '⚡', name: 'Shock',         dmg: 6, flavor: 'The air cracks.' },
+    { kind: 'attack', emblem: '❄️', name: 'Frost Lance',   dmg: 5, flavor: 'It bites where it touches.' },
+    { kind: 'block',  emblem: '🔮', name: 'Ward Sigil',    block: 7, flavor: 'A glyph hums into being.' },
+    { kind: 'special',emblem: '🔥', name: 'Arcane Bolt',   dmg: 14, cost: 1, flavor: 'The room briefly glows.' },
+  ],
+  Rogue: [
+    { kind: 'attack', emblem: '🗡️', name: 'Slash',         dmg: 4, flavor: 'Quick. Mean.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Throw Dagger',  dmg: 5, flavor: 'Always one in reserve.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Gut Punch',     dmg: 4, flavor: "Where the armor isn't." },
+    { kind: 'block',  emblem: '💨', name: 'Smoke Vial',    block: 6, flavor: 'A grey cloud, then nothing.' },
+    { kind: 'special',emblem: '🌑', name: 'Backstab',      dmg: 13, cost: 1, flavor: 'It never sees you move.' },
+  ],
+  Cleric: [
+    { kind: 'attack', emblem: '🔨', name: 'Mace Swing',    dmg: 3, flavor: 'Iron for the unholy.' },
+    { kind: 'attack', emblem: '☀️', name: 'Smite',         dmg: 4, flavor: 'The light burns.' },
+    { kind: 'attack', emblem: '🔨', name: 'Mace Heavy',    dmg: 4, flavor: 'A judgement, two-handed.' },
+    { kind: 'block',  emblem: '🛡️', name: 'Bless',         block: 6, heal: 3, flavor: 'A shield of grace.' },
+    { kind: 'special',emblem: '💖', name: 'Mend',           heal: 12, cost: 1, flavor: 'Wounds knit. Pain recedes.' },
+  ],
+  Berserker: [
+    { kind: 'attack', emblem: '🪓', name: 'Hack',          dmg: 6, flavor: 'Wood splinters. Bone too.' },
+    { kind: 'attack', emblem: '🪓', name: 'Cleave',        dmg: 5, flavor: 'Wide arc. Loud.' },
+    { kind: 'attack', emblem: '🪓', name: 'Headbutt',      dmg: 4, flavor: 'Costs him a tooth, every time.' },
+    { kind: 'block',  emblem: '😤', name: 'Endure',        block: 4, flavor: 'He just takes it.' },
+    { kind: 'special',emblem: '🔥', name: 'Reckless Swing',dmg: 16, selfDmg: 3, cost: 1, flavor: 'A risk that pays in blood.' },
+  ],
+  Bard: [
+    { kind: 'attack', emblem: '🎭', name: 'Cutting Word',  dmg: 3, flavor: 'It cuts deeper than it should.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Rapier Thrust', dmg: 4, flavor: 'A flourish, then steel.' },
+    { kind: 'attack', emblem: '🎵', name: 'Discordant Note',dmg: 3, flavor: 'A note no ear should hear.' },
+    { kind: 'block',  emblem: '🎶', name: 'Lullaby',       block: 5, flavor: 'It briefly forgets you.' },
+    { kind: 'special',emblem: '🎭', name: 'Mocking Verse', dmg: 9, heal: 3, cost: 1, flavor: 'It dies of embarrassment.' },
+  ],
+  Druid: [
+    { kind: 'attack', emblem: '🌿', name: 'Thorn Whip',    dmg: 4, flavor: 'A green lash, swift.' },
+    { kind: 'attack', emblem: '🐺', name: 'Maul',          dmg: 5, flavor: 'Beast-form. Brief. Bloody.' },
+    { kind: 'attack', emblem: '🌿', name: 'Bramble',       dmg: 4, flavor: 'Roots find soft places.' },
+    { kind: 'block',  emblem: '🌳', name: 'Bark Skin',     block: 7, flavor: 'Skin turns to oak.' },
+    { kind: 'special',emblem: '🌑', name: 'Beast Form',    dmg: 12, cost: 1, flavor: 'Old Mungo is no longer Mungo.' },
+  ],
+  Alchemist: [
+    { kind: 'attack', emblem: '⚗️', name: 'Acid Flask',    dmg: 5, flavor: 'It hisses on contact.' },
+    { kind: 'attack', emblem: '💥', name: 'Bomb',          dmg: 6, flavor: 'A small, accurate ruin.' },
+    { kind: 'attack', emblem: '☠️', name: 'Poison Dart',   dmg: 4, flavor: 'A pinprick, then quiet.' },
+    { kind: 'block',  emblem: '🧪', name: 'Antidote',      block: 4, heal: 4, flavor: 'Just in time.' },
+    { kind: 'special',emblem: '💣', name: 'Greek Fire',    dmg: 13, cost: 1, flavor: 'Sticky. Burns underwater.' },
+  ],
+  Necromancer: [
+    { kind: 'attack', emblem: '🦴', name: 'Bone Spike',    dmg: 5, flavor: 'Up from below. Sudden.' },
+    { kind: 'attack', emblem: '👻', name: 'Drain',         dmg: 4, heal: 2, flavor: 'It takes. He keeps.' },
+    { kind: 'attack', emblem: '🦴', name: 'Rattle',        dmg: 4, flavor: 'Old bones answer him.' },
+    { kind: 'block',  emblem: '💀', name: 'Bone Shield',   block: 6, flavor: 'A wall of the long-dead.' },
+    { kind: 'special',emblem: '⚰️', name: 'Raise Dead',    dmg: 10, heal: 5, cost: 1, flavor: 'It rises. Briefly.' },
+  ],
+  Scholar: [
+    { kind: 'attack', emblem: '📖', name: 'Cited Curse',   dmg: 3, flavor: 'Footnoted. Devastating.' },
+    { kind: 'attack', emblem: '🗝️', name: 'Lock-pick Jab', dmg: 4, flavor: 'A surprising amount of force.' },
+    { kind: 'attack', emblem: '📜', name: 'Old Word',      dmg: 4, flavor: 'A name that should not be spoken.' },
+    { kind: 'block',  emblem: '📚', name: 'Tome Shield',   block: 5, flavor: 'Surprisingly thick.' },
+    { kind: 'special',emblem: '✨', name: 'Forbidden Rite',dmg: 11, cost: 1, flavor: 'He read it once. Once was enough.' },
+  ],
+  Assassin: [
+    { kind: 'attack', emblem: '🗡️', name: 'Silent Cut',    dmg: 5, flavor: 'No sound. No witness.' },
+    { kind: 'attack', emblem: '🌑', name: 'Shadow Step',   dmg: 6, flavor: 'Here. Then there. Then a wound.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Throat Strike', dmg: 5, flavor: 'Precise. Final.' },
+    { kind: 'block',  emblem: '🌑', name: 'Vanish',        block: 6, dodge: true, flavor: 'She is no longer where she was.' },
+    { kind: 'special',emblem: '☠️', name: 'Death Mark',    dmg: 15, cost: 1, flavor: 'A name. A breath. A body.' },
+  ],
+};
+
+export const MONSTER_POOLS = {
+  small: [
+    { kind: 'attack', emblem: '🦷', name: 'Bite',    dmgMult: 1.0, flavor: 'It lunges.' },
+    { kind: 'attack', emblem: '🦷', name: 'Snap',    dmgMult: 0.7, flavor: 'A quick, mean nip.' },
+    { kind: 'attack', emblem: '💢', name: 'Frenzy',  dmgMult: 1.2, flavor: 'It thrashes wildly.' },
+    { kind: 'wind',   emblem: '💨', name: 'Skitter', flavor: 'It scurries, gathering itself.' },
+    { kind: 'guard',  emblem: '🫥', name: 'Coil',    flavor: 'It draws back, watching.' },
+  ],
+  medium: [
+    { kind: 'attack', emblem: '⚔️', name: 'Strike',  dmgMult: 1.0, flavor: 'A heavy blow.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Slash',   dmgMult: 0.8, flavor: 'Claws find purchase.' },
+    { kind: 'attack', emblem: '💥', name: 'Slam',    dmgMult: 1.3, flavor: 'The whole room shakes.' },
+    { kind: 'wind',   emblem: '😤', name: 'Roar',    flavor: 'It bellows. The walls answer.' },
+    { kind: 'guard',  emblem: '🛡️', name: 'Brace',   flavor: 'It hunkers, waiting.' },
+  ],
+  large: [
+    { kind: 'attack', emblem: '🔥', name: 'Maul',    dmgMult: 1.0, flavor: 'A full-body assault.' },
+    { kind: 'attack', emblem: '💀', name: 'Crush',   dmgMult: 1.2, flavor: 'A bone-snapping blow.' },
+    { kind: 'attack', emblem: '⚡', name: 'Rend',    dmgMult: 1.4, flavor: 'It tears with terrible purpose.' },
+    { kind: 'wind',   emblem: '🌑', name: 'Gather',  flavor: 'It hisses ancient words.' },
+    { kind: 'guard',  emblem: '🛡️', name: 'Recoil',  flavor: 'It withdraws, conserving.' },
+  ],
+};
+
+export const ENCOUNTERS = {
+  monsters: [
+    { tier: 1, emblem: '🐀', name: 'Crypt Rat Swarm',   hp: 8,  atk: 3,  pool: 'small',  gold: 2,  flavor: 'A heaving carpet of teeth and tail.' },
+    { tier: 1, emblem: '💀', name: 'Restless Bones',    hp: 10, atk: 4,  pool: 'medium', gold: 3,  flavor: 'It rises. It always rises.' },
+    { tier: 1, emblem: '🕷️', name: 'Tomb Spider',       hp: 9,  atk: 4,  pool: 'small',  gold: 3,  flavor: 'Eight eyes. None of them friendly.' },
+    { tier: 1, emblem: '🦇', name: 'Cave Bat Cloud',    hp: 7,  atk: 3,  pool: 'small',  gold: 2,  flavor: 'A storm with fangs.' },
+    { tier: 2, emblem: '👻', name: 'Wailing Shade',     hp: 14, atk: 6,  pool: 'medium', gold: 5,  flavor: 'It remembers a name. It thinks it is yours.' },
+    { tier: 2, emblem: '🧟', name: 'Bog Wight',         hp: 18, atk: 7,  pool: 'medium', gold: 5,  flavor: 'Drips. Lurches. Does not stop.' },
+    { tier: 2, emblem: '👹', name: 'Snarling Imp',      hp: 13, atk: 6,  pool: 'medium', gold: 6,  flavor: 'Small. Loud. Genuinely furious.' },
+    { tier: 2, emblem: '🐍', name: 'Sepulchre Serpent', hp: 16, atk: 7,  pool: 'medium', gold: 6,  flavor: 'It coils around the columns like rope.' },
+    { tier: 3, emblem: '🐲', name: 'Dread Wyrmlet',     hp: 24, atk: 9,  pool: 'large',  gold: 12, flavor: 'Young. Already terrible.' },
+    { tier: 3, emblem: '👁️', name: 'The Watcher',       hp: 22, atk: 8,  pool: 'large',  gold: 10, flavor: 'It blinks once. The room shudders.' },
+    { tier: 3, emblem: '☠️', name: 'Lich Acolyte',      hp: 26, atk: 10, pool: 'large',  gold: 14, flavor: 'Once was a scholar. Took a wrong turn.' },
+  ],
+  treasures: [
+    { emblem: '💰', name: "Hoarder's Coffer",  gold: 8,  dmg: 2, flavor: 'It is locked. It is also trapped.' },
+    { emblem: '👑', name: "A Pauper's Crown",  gold: 12, dmg: 3, flavor: 'Too small to wear. Too pretty to leave.' },
+    { emblem: '💎', name: 'Bloodstone Sigil',  gold: 10, dmg: 2, flavor: 'Warm to the touch. Suspiciously so.' },
+    { emblem: '📜', name: 'Sealed Reliquary',  gold: 9,  dmg: 3, flavor: 'The wax bears a forgotten crest.' },
+    { emblem: '🗡️', name: 'Funerary Blade',    gold: 7,  dmg: 1, flavor: 'Buried with someone who needed it.' },
+    { emblem: '🛏️', name: 'A Quiet Alcove',    rest: 'short', flavor: 'Dry. Hidden. Briefly safe.' },
+    { emblem: '🏛️', name: 'Forgotten Sanctum', rest: 'long',  flavor: 'Locked from inside. The party rests deeply.' },
+  ],
+  potions: [
+    { emblem: '🧪', name: 'Verdant Draught',       heal: 8,  flavor: 'It tastes of moss and miracles.' },
+    { emblem: '🍷', name: "Saint's Blood",          heal: 10, flavor: 'Allegedly. Probably wine.' },
+    { emblem: '🫗', name: "Witch's Tonic",          heal: 6,  stamina: 2, flavor: 'Bitter. Restorative. Suspicious.' },
+    { emblem: '🥃', name: "Crypt-keeper's Brandy",  heal: 5,  stamina: 3, flavor: 'Older than your grandfather. Stronger too.' },
+  ],
+  events: [
+    { emblem: '🚪', name: 'A Locked Door',      desc: 'Force it open?',  success: { gold: 6,  flavor: 'It splinters. Treasure within.' },         fail: { dmg: 4,           flavor: 'The lock was a snare.' },          flavor: 'Iron-bound. Something rattles within.' },
+    { emblem: '🕳️', name: 'Yawning Pit',        desc: 'Climb down?',    success: { gold: 10, flavor: 'A forgotten cache.' },                       fail: { dmg: 5,           flavor: 'The rope frays. You land hard.' },   flavor: 'It exhales cold air.' },
+    { emblem: '⛪', name: 'Roadside Shrine',    desc: 'Tithe a coin?',  success: { heal: 6,  flavor: 'A warmth fills the wounded.' },               fail: { dmg: 0,           flavor: 'Silence. Cold silence.' },           flavor: "The saint's face is worn smooth." },
+    { emblem: '🪞', name: 'Black Mirror',       desc: 'Look closely?',  success: { gold: 7, heal: 3, flavor: 'It shows you a kindness.' },          fail: { dmg: 6,           flavor: 'It shows you yourself.' },          flavor: 'It does not show the room behind you.' },
+    { emblem: '🔥', name: 'Watchfire',          desc: 'Rest beside it?',success: { heal: 7, stamina: 2, flavor: 'You wake refreshed.' },            fail: { dmg: 3,           flavor: 'Something watched you sleep.' },     flavor: 'Still burning. Recently tended.' },
+    { emblem: '⚰️', name: 'Open Sarcophagus',  desc: 'Search inside?', success: { gold: 11, flavor: 'A signet ring. Gold.' },                      fail: { dmg: 5,           flavor: 'A hand closes around your wrist.' }, flavor: 'The lid is already askew.' },
+    { emblem: '🍖', name: 'Abandoned Stew',     desc: 'Eat it?',        success: { heal: 5,  flavor: 'Surprisingly good.' },                        fail: { dmg: 3,           flavor: 'Something in it bites back.' },      flavor: 'It is still warm. Concerning.' },
+    { emblem: '👤', name: 'A Beggar in Rags',   desc: 'Offer coin?',    success: { gold: 5,  flavor: 'He returns it threefold.' },                  fail: { dmg: 0, gold: -3, flavor: 'He vanishes with your purse.' },     flavor: 'He will not meet your eye.' },
+  ],
+  bosses: [
+    { emblem: '🐉',   name: 'The Old Dragon',        hp: 40, atk: 12, pool: 'large', gold: 40, flavor: 'It has waited beneath the world for an age.' },
+    { emblem: '👁️‍🗨️', name: 'The Crypt-Mind',         hp: 36, atk: 11, pool: 'large', gold: 35, flavor: 'A consciousness without a body, dreaming you here.' },
+    { emblem: '⚱️',   name: 'The First Buried King',  hp: 44, atk: 13, pool: 'large', gold: 45, flavor: 'He wakes only for coronations. Or coffins.' },
+  ],
+};
+
+export const FLOOR_NAMES = [
+  '— THE GATES —',
+  '— THE OSSUARY —',
+  '— THE DEEP HALLS —',
+  '— THE CHOIR PIT —',
+];
