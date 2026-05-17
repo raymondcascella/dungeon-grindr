@@ -56,8 +56,7 @@ function createGameStore() {
 
   function _spawnFloater(s, text, kind) {
     const id = Date.now() + Math.random();
-    s.floaters = [...s.floaters, { id, text, kind }];
-    setTimeout(() => update(st => { st.floaters = st.floaters.filter(f => f.id !== id); return st; }), 1200);
+    s.floaters = [...(s.floaters || []), { id, text, kind }];
   }
 
   function _damageParty(s, amount) {
@@ -228,6 +227,86 @@ function createGameStore() {
           awaitingMonster: false,
           finished: false,
         };
+        _drawCombatRound(s);
+        return s;
+      });
+    },
+
+    _startCombat(monster) {
+      update(s => {
+        s.phase = 'combat';
+        s.combat = {
+          monster: { ...monster, currentHp: monster.hp, isBoss: monster.type === 'boss' },
+          round: 1,
+          hand: [],
+          stagedCard: null,
+          blockThisRound: 0,
+          dodgeThisRound: false,
+          monsterCard: null,
+          awaitingMonster: false,
+          finished: false,
+        };
+        _drawCombatRound(s);
+        return s;
+      });
+    },
+
+    stageCard(card) {
+      update(s => { s.combat.stagedCard = card; return s; });
+    },
+
+    unstageCard() {
+      update(s => { s.combat.stagedCard = null; return s; });
+    },
+
+    playCard() {
+      update(s => {
+        const c = s.combat;
+        const card = c.stagedCard;
+        if (!card) return s;
+        if (card.kind === 'special' && s.stamina < (card.cost || 1)) { _showLog(s, 'Not enough stamina!'); return s; }
+        if (card.kind === 'special') s.stamina -= (card.cost || 1);
+        if (card.dmg) { c.monster.currentHp -= card.dmg; _spawnFloater(s, `-${card.dmg}`, 'dmg'); _showLog(s, `${card.ownerName}'s ${card.name}: -${card.dmg}.`); }
+        if (card.heal) _healParty(s, card.heal);
+        if (card.block) { c.blockThisRound += card.block; if (card.dodge) c.dodgeThisRound = true; }
+        if (card.selfDmg) _damageParty(s, card.selfDmg);
+        c.stagedCard = null;
+        if (c.monster.currentHp <= 0) {
+          s.gold += c.monster.gold;
+          _spawnFloater(s, `+${c.monster.gold}g`, 'gold');
+          s.stats.kills++;
+          _showLog(s, `${c.monster.name} falls! +${c.monster.gold} gold`);
+          c.finished = true;
+          setTimeout(() => update(st => { st.phase = 'dungeon'; st.combat = null; _checkDeath(st); if (st.phase !== 'end') _drawNext(st); return st; }), 1000);
+          return s;
+        }
+        if (s.party.every(m => m.currentHp <= 0)) { s.phase = 'end'; return s; }
+        c.awaitingMonster = true;
+        return s;
+      });
+    },
+
+    resolveMonster() {
+      update(s => {
+        const c = s.combat;
+        const mc = c.monsterCard;
+        if (!mc) return s;
+        if (mc.kind === 'wind' || mc.kind === 'guard') {
+          _showLog(s, `${c.monster.name}: ${mc.name}.`);
+        } else if (mc.kind === 'attack') {
+          if (c.dodgeThisRound) {
+            _showLog(s, `The party dodges ${c.monster.name}'s ${mc.name}!`);
+          } else {
+            const raw = Math.max(1, Math.round(c.monster.atk * (mc.dmgMult || 1)));
+            const absorbed = Math.min(c.blockThisRound, raw);
+            const net = raw - absorbed;
+            if (net > 0) _damageParty(s, net);
+            _showLog(s, absorbed > 0 ? `Block absorbs ${absorbed}. -${net} HP.` : `${c.monster.name}: ${mc.name}. -${raw} HP.`);
+          }
+        }
+        if (s.party.every(m => m.currentHp <= 0)) { s.phase = 'end'; return s; }
+        c.awaitingMonster = false;
+        c.round++;
         _drawCombatRound(s);
         return s;
       });

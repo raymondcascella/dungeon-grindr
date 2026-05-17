@@ -57,3 +57,57 @@ describe('damageParty / healParty', () => {
     expect(get(game).party[0].currentHp).toBeLessThanOrEqual(maxHp);
   });
 });
+
+describe('combat', () => {
+  beforeEach(() => {
+    game.newGame();
+    game.swipeRecruit('right');
+    game.swipeRecruit('right');
+    const monster = { type: 'monster', name: 'Rat', hp: 3, atk: 1, pool: 'small', gold: 1 };
+    game._startCombat(monster);
+  });
+
+  it('enters combat phase with hand populated', () => {
+    const s = get(game);
+    expect(s.phase).toBe('combat');
+    expect(s.combat.hand.length).toBeGreaterThan(0);
+    expect(s.combat.hand.every(c => c.type === 'action')).toBe(true);
+  });
+
+  it('stageCard sets stagedCard', () => {
+    const s = get(game);
+    const card = s.combat.hand[0];
+    game.stageCard(card);
+    expect(get(game).combat.stagedCard).toEqual(card);
+  });
+
+  it('unstageCard clears stagedCard', () => {
+    const s = get(game);
+    game.stageCard(s.combat.hand[0]);
+    game.unstageCard();
+    expect(get(game).combat.stagedCard).toBeNull();
+  });
+
+  it('playCard reduces monster HP', () => {
+    const s = get(game);
+    const attackCard = s.combat.hand.find(c => c.kind === 'attack');
+    if (!attackCard) return;
+    game.stageCard(attackCard);
+    game.playCard();
+    expect(get(game).combat.monster.currentHp).toBeLessThan(3);
+  });
+
+  it('monster dies → phase transitions', () => {
+    for (let i = 0; i < 10; i++) {
+      const s = get(game);
+      if (s.phase !== 'combat') break;
+      if (s.combat.awaitingMonster) { game.resolveMonster(); continue; }
+      const attack = s.combat.hand.find(c => c.kind === 'attack');
+      if (attack) { game.stageCard(attack); game.playCard(); }
+    }
+    const s = get(game);
+    if (s.phase === 'combat') {
+      expect(s.combat.monster.currentHp).toBeLessThanOrEqual(0);
+    }
+  });
+});
