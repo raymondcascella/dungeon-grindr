@@ -424,15 +424,10 @@ body::after {
 
 /* === COMBAT MODE === */
 #app-root.combat-mode {
-  --parchment: #f0e0d0;
+  --parchment: #1a0d0d;
+  --ink: #f0e0d0;
+  --ink-faint: #8a6a5a;
   background: radial-gradient(ellipse at center, #2a0a0a 0%, #0d0505 100%);
-}
-#app-root.combat-mode::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, #2a0a0a 0%, #0d0505 100%);
-  z-index: -1;
 }
 #app-root.combat-mode .crest {
   border-color: #8b1a1a;
@@ -441,3 +436,56 @@ body::after {
 #app-root.combat-mode .stats {
   border-color: #5a1010;
 }
+
+/* === SHAKING === */
+#app-root.shaking {
+  animation: shake 150ms ease;
+}
+@keyframes shake {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-4px, 2px); }
+  40%  { transform: translate(4px, -2px); }
+  60%  { transform: translate(-3px, 3px); }
+  80%  { transform: translate(3px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* === STACK / ACTIONS LAYOUT === */
+.stack-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 16px;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px 16px;
+}
+.action-hint { display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0.5; font-size: 0.75rem; }
+.action-hint.left { align-items: flex-start; }
+.action-hint.right { align-items: flex-end; }
+.action-hint .arrow { font-size: 0.85rem; letter-spacing: 0.05em; }
+.action-hint .label { font-family: var(--font-display, serif); letter-spacing: 0.1em; }
+
+/* === CARD === */
+.card {
+  width: 260px;
+  min-height: 340px;
+  border: 1px solid var(--ink, #1a1410);
+  border-radius: 12px;
+  background: var(--parchment, #e8dcc0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.card-emblem { font-size: 3.5rem; }
+.card-name { font-family: var(--font-display, serif); font-size: 1.3rem; letter-spacing: 0.08em; text-align: center; }
+.card-sub { font-size: 0.8rem; opacity: 0.7; letter-spacing: 0.1em; text-transform: uppercase; }
+.card-flavor { font-size: 0.75rem; opacity: 0.6; font-style: italic; text-align: center; line-height: 1.5; }
+.card-stats { font-size: 0.85rem; letter-spacing: 0.05em; }
