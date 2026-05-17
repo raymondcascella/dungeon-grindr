@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.local
+
+# Android build
+android/.gradle/
+android/app/build/
+android/build/
+
+# iOS build
+ios/App/Pods/
+ios/.DS_Store
+
+# Keystore — NEVER commit these
+*.jks
+*.keystore
+keystore.properties

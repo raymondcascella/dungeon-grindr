@@ -9,7 +9,7 @@
   });
 </script>
 
-<div class="transition-overlay" />
+<div class="transition-overlay"></div>
 
 <style>
   .transition-overlay {

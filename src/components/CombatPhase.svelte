@@ -42,6 +42,7 @@
         <div class="monster-turn">
           <div class="monster-card-prompt">Resolve {c.monster.name}'s move:</div>
           <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
           <div class="monster-card-swipe" on:click={onMonsterSwipe}>
             <div class="mc-name">{c.monsterCard?.name}</div>
             <div class="mc-hint">tap to resolve</div>
