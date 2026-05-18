@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Dungeon Grindr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=UnifrakturCook:wght@700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1410;
+    --parchment: #e8dcc0;
+    --parchment-dim: #c9b896;
+    --parchment-deep: #a89572;
+    --blood: #8b1a1a;
+    --blood-bright: #c52828;
+    --gold: #c9a55c;
+    --gold-bright: #e8c878;
+    --moss: #4a5d3a;
+    --shadow: rgba(15, 10, 5, 0.6);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body {
+    font-family: 'Cormorant Garamond', serif;
+    background: #0a0805;
+    color: var(--parchment);
+    position: relative;
+  }
+
+  /* Parchment grain background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(80, 40, 20, 0.3), transparent 60%),
+      radial-gradient(ellipse at 80% 90%, rgba(40, 20, 10, 0.4), transparent 60%),
+      repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 3px),
+      #0a0805;
+    z-index: -2;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 100;
+    mix-blend-mode: overlay;
+  }
+
+  #app {
+    height: 100vh;
+    height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 12px 16px 20px;
+  }
+
+  /* === HEADER / STATS === */
+  .crest {
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .crest .title {
+    font-family: 'UnifrakturCook', serif;
+    font-size: 20px;
+    color: var(--blood-bright);
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(197, 40, 40, 0.35), 1px 1px 0 #000;
+    line-height: 1;
+  }
+  .crest .floor {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    color: var(--parchment-deep);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin: 8px 0;
+    padding: 8px;
+    background: linear-gradient(180deg, rgba(232, 220, 192, 0.08), rgba(232, 220, 192, 0.03));
+    border: 1px solid rgba(201, 165, 92, 0.3);
+    border-radius: 2px;
+    position: relative;
+  }
+  .stats::before, .stats::after {
+    content: '✦';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold);
+    font-size: 10px;
+  }
+  .stats::before { left: -4px; }
+  .stats::after { right: -4px; }
+
+  .stat {
+    text-align: center;
+    font-family: 'IM Fell English SC', serif;
+  }
+  .stat .label {
+    font-size: 9px;
+    color: var(--parchment-deep);
+    letter-spacing: 2px;
+  }
+  .stat .value {
+    font-size: 18px;
+    color: var(--gold-bright);
+    font-weight: 600;
+    margin-top: 1px;
+    transition: color 0.2s;
+  }
+  .stat .value.flash-red { color: var(--blood-bright); }
+  .stat .value.flash-green { color: #8fb574; }
+
+  /* === PARTY ROSTER === */
+  .party {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 10px;
+    min-height: 56px;
+  }
+  .member {
+    flex: 0 0 70px;
+    background: linear-gradient(180deg, rgba(232, 220, 192, 0.12), rgba(60, 40, 25, 0.4));
+    border: 1px solid rgba(201, 165, 92, 0.5);
+    border-radius: 2px;
+    padding: 4px 2px;
+    text-align: center;
+    position: relative;
+    animation: memberJoin 0.4s ease-out;
+  }
+  @keyframes memberJoin {
+    from { transform: translateY(20px) scale(0.7); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .member.dead {
+    filter: grayscale(1) brightness(0.4);
+    border-color: var(--blood);
+  }
+  .member.dead::after {
+    content: '✕';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--blood-bright);
+    font-size: 32px;
+    text-shadow: 0 0 8px #000;
+  }
+  .member .icon { font-size: 20px; line-height: 1; }
+  .member .name {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    color: var(--parchment);
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .member .hp {
+    font-size: 10px;
+    color: var(--gold-bright);
+    font-family: 'IM Fell English SC', serif;
+    margin-top: 1px;
+  }
+  .member-empty {
+    flex: 0 0 70px;
+    border: 1px dashed rgba(201, 165, 92, 0.25);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(201, 165, 92, 0.3);
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  /* === CARD STACK === */
+  .stack-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 0 8px;
+    min-height: 0;
+  }
+  .stack {
+    position: relative;
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 5 / 7;
+    max-height: 100%;
+  }
+
+  /* Enemy display — shown only during combat */
+  .enemy-display {
+    display: none;
+  }
+  .stack-wrap.combat-mode {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 0;
+  }
+  .stack-wrap.combat-mode .enemy-display {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: linear-gradient(180deg, rgba(60, 15, 10, 0.7), rgba(30, 8, 5, 0.85));
+    border: 1px solid var(--blood);
+    border-radius: 3px;
+    box-shadow: 0 0 18px rgba(197, 40, 40, 0.25), inset 0 0 0 1px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .stack-wrap.combat-mode .enemy-display::before {
+    content: '⚔';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--blood-bright);
+    background: #0a0805;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+  .enemy-portrait {
+    flex: 0 0 56px;
+    height: 56px;
+    background: radial-gradient(circle, rgba(197, 40, 40, 0.2), rgba(0,0,0,0.4));
+    border: 1px solid var(--blood);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    line-height: 1;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+  }
+  .enemy-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .enemy-name {
+    font-family: 'UnifrakturCook', serif;
+    font-size: 18px;
+    color: var(--parchment);
+    text-shadow: 0 0 8px rgba(197, 40, 40, 0.5), 1px 1px 0 #000;
+    line-height: 1.05;
+    margin-bottom: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .enemy-hp-bar {
+    height: 8px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(197, 40, 40, 0.5);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    position: relative;
+  }
+  .enemy-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c52828, #8b1a1a);
+    transition: width 0.4s ease-out;
+    box-shadow: inset 0 1px 0 rgba(255, 100, 100, 0.4);
+  }
+  .enemy-hp-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    color: var(--parchment);
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
+  .enemy-intent {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    color: var(--parchment-dim);
+    letter-spacing: 1px;
+  }
+  .enemy-intent .intent-icon {
+    font-size: 14px;
+  }
+  .enemy-intent .intent-label {
+    color: var(--blood-bright);
+    font-weight: 600;
+  }
+  .enemy-intent .intent-dmg {
+    margin-left: auto;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 14px;
+    color: var(--blood-bright);
+    text-shadow: 0 0 6px rgba(197, 40, 40, 0.5);
+  }
+
+  /* Combat hand area: hosts the .stack with smaller cards fanned out */
+  .stack-wrap.combat-mode .stack {
+    flex: 1;
+    aspect-ratio: auto;
+    max-width: none;
+    min-height: 0;
+    margin: 0 auto;
+    width: 100%;
+  }
+  /* In combat, cards become smaller and fanned horizontally */
+  .stack-wrap.combat-mode .card {
+    width: 56%;
+    height: 88%;
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    transform-origin: 50% 110%;
+  }
+  .stack-wrap.combat-mode .card .card-content {
+    padding: 12px 14px 12px;
+  }
+  .stack-wrap.combat-mode .card .card-emblem {
+    font-size: 40px;
+    margin: 0;
+  }
+  .stack-wrap.combat-mode .card .card-name {
+    font-size: 22px;
+    margin: 1px 0;
+  }
+  .stack-wrap.combat-mode .card .card-flavor {
+    font-size: 10px;
+    margin: 1px 0;
+    line-height: 1.2;
+  }
+  .stack-wrap.combat-mode .card .card-stat .v {
+    font-size: 20px;
+  }
+  .stack-wrap.combat-mode .card .card-stat .v.desc {
+    font-size: 11px;
+  }
+  .stack-wrap.combat-mode .card .card-stat .l {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+  }
+  .stack-wrap.combat-mode .card .card-stats {
+    padding: 6px 4px 2px;
+    gap: 5px;
+  }
+  .stack-wrap.combat-mode .card .card-stat {
+    padding: 4px 2px;
+  }
+  .stack-wrap.combat-mode .card .card-kind {
+    font-size: 9px;
+    padding-bottom: 3px;
+    margin-bottom: 4px;
+    letter-spacing: 2px;
+  }
+  .stack-wrap.combat-mode .action-badge {
+    top: 8px;
+    right: 8px;
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .card {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, #f0e4c8 0%, #d9c8a4 50%, #c4b088 100%);
+    border-radius: 4px;
+    box-shadow:
+      0 1px 0 rgba(255, 240, 200, 0.4) inset,
+      0 -1px 0 rgba(100, 60, 30, 0.3) inset,
+      0 12px 28px rgba(0, 0, 0, 0.5),
+      0 4px 10px rgba(0, 0, 0, 0.4);
+    color: var(--ink);
+    cursor: grab;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s;
+    will-change: transform;
+    border: 1px solid rgba(60, 40, 20, 0.4);
+  }
+  .card.dragging { transition: none; cursor: grabbing; }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at center, transparent 40%, rgba(80, 50, 20, 0.18) 100%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0 0.1 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    mix-blend-mode: multiply;
+  }
+  /* corner flourishes */
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(60, 40, 20, 0.35);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .card-corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .card-corner.tl { top: 4px; left: 4px; border-top: 2px solid #5c3a1a; border-left: 2px solid #5c3a1a; }
+  .card-corner.tr { top: 4px; right: 4px; border-top: 2px solid #5c3a1a; border-right: 2px solid #5c3a1a; }
+  .card-corner.bl { bottom: 4px; left: 4px; border-bottom: 2px solid #5c3a1a; border-left: 2px solid #5c3a1a; }
+  .card-corner.br { bottom: 4px; right: 4px; border-bottom: 2px solid #5c3a1a; border-right: 2px solid #5c3a1a; }
+
+  .card-content {
+    position: relative;
+    z-index: 1;
+    padding: 14px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    gap: 4px;
+  }
+  .card-kind {
+    flex: 0 0 auto;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #6b4a28;
+    text-align: center;
+    border-bottom: 1px solid rgba(80, 50, 20, 0.3);
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+  }
+  .card-emblem {
+    flex: 0 1 auto;
+    font-size: 52px;
+    text-align: center;
+    line-height: 1;
+    margin: 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)) sepia(0.4);
+  }
+  .card-name {
+    flex: 0 0 auto;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 30px;
+    text-align: center;
+    color: #2a1505;
+    line-height: 1.05;
+    margin: 2px 0;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 0 rgba(255, 240, 200, 0.4), 1px 1px 2px rgba(60, 30, 10, 0.15);
+  }
+  .card-flavor {
+    flex: 1 1 auto;
+    min-height: 0;
+    font-style: italic;
+    font-size: 12px;
+    text-align: center;
+    color: #5c3a1a;
+    line-height: 1.3;
+    margin: 2px 0;
+    padding: 0 6px;
+    opacity: 0.85;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .card-effect {
+    flex: 0 0 auto;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    text-align: center;
+    color: #2a1505;
+    background: rgba(80, 50, 20, 0.1);
+    border-top: 1px solid rgba(80, 50, 20, 0.2);
+    border-bottom: 1px solid rgba(80, 50, 20, 0.2);
+    line-height: 1.4;
+    padding: 5px 6px;
+    margin: 2px -2px;
+    letter-spacing: 0.5px;
+  }
+  .card-effect strong {
+    color: var(--blood);
+    font-weight: 700;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 13px;
+  }
+  /* On monster-action cards, invert the effect colors */
+  .card.monster-action-card .card-effect {
+    background: rgba(197, 40, 40, 0.15);
+    border-top-color: rgba(197, 40, 40, 0.4);
+    border-bottom-color: rgba(197, 40, 40, 0.4);
+    color: var(--parchment);
+  }
+  .card.monster-action-card .card-effect strong {
+    color: var(--blood-bright);
+  }
+  /* On gold special cards */
+  .card.action-card.kind-special .card-effect {
+    background: rgba(180, 130, 30, 0.15);
+    border-color: rgba(180, 130, 30, 0.4);
+  }
+  /* Smaller in combat fan */
+  .stack-wrap.combat-mode .card .card-effect {
+    font-size: 10px;
+    padding: 4px 6px;
+    margin: 3px -2px 4px;
+  }
+  .stack-wrap.combat-mode .card .card-effect strong {
+    font-size: 12px;
+  }
+  .card-stats {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-around;
+    margin-top: auto;
+    padding: 8px 6px 2px;
+    border-top: 2px double rgba(80, 50, 20, 0.45);
+    gap: 6px;
+  }
+  .card-stat {
+    text-align: center;
+    font-family: 'IM Fell English SC', serif;
+    flex: 1;
+    background: rgba(80, 50, 20, 0.06);
+    border: 1px solid rgba(80, 50, 20, 0.18);
+    border-radius: 2px;
+    padding: 4px 3px;
+  }
+  .card-stat .l {
+    font-size: 9px;
+    color: #6b4a28;
+    letter-spacing: 2px;
+    font-weight: 600;
+  }
+  .card-stat .v {
+    font-family: 'UnifrakturCook', serif;
+    font-size: 22px;
+    color: #2a1505;
+    font-weight: 700;
+    margin-top: 2px;
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255, 240, 200, 0.3);
+  }
+  /* When event stat has descriptive text instead of a number */
+  .card-stat .v.desc {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 600;
+  }
+
+  /* === COMBAT CARD VARIANTS === */
+  /* Action badge — top-right ribbon showing ATTACK/BLOCK/SPECIAL */
+  .action-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 4;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    border-radius: 1px;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.2);
+    transform: rotate(2deg);
+  }
+  .action-badge.badge-attack {
+    background: linear-gradient(180deg, #a82828, #6b1818);
+    border: 1px solid #c54040;
+  }
+  .action-badge.badge-block {
+    background: linear-gradient(180deg, #3a5a8a, #1f3a60);
+    border: 1px solid #5a78a8;
+  }
+  .action-badge.badge-special {
+    background: linear-gradient(180deg, #c9a55c, #8a6f2e);
+    border: 1px solid #e8c878;
+    color: #fff5d4;
+    text-shadow: 0 0 6px rgba(232, 200, 120, 0.6), 0 1px 0 rgba(0,0,0,0.4);
+  }
+  .action-badge.badge-monster {
+    background: linear-gradient(180deg, #2a0e0a, #1a0606);
+    border: 1px solid var(--blood-bright);
+    color: var(--blood-bright);
+  }
+
+  /* Player action cards — paler, with a colored edge based on kind */
+  .card.action-card {
+    background: linear-gradient(160deg, #f4ecd2 0%, #e3d5b1 50%, #c9b48a 100%);
+  }
+  .card.action-card.kind-attack {
+    box-shadow:
+      inset 0 0 0 2px rgba(180, 50, 30, 0.35),
+      0 1px 0 rgba(255, 240, 200, 0.4) inset,
+      0 12px 28px rgba(0, 0, 0, 0.5),
+      0 4px 10px rgba(0, 0, 0, 0.4);
+  }
+  .card.action-card.kind-block {
+    box-shadow:
+      inset 0 0 0 2px rgba(60, 90, 150, 0.4),
+      0 1px 0 rgba(255, 240, 200, 0.4) inset,
+      0 12px 28px rgba(0, 0, 0, 0.5),
+      0 4px 10px rgba(0, 0, 0, 0.4);
+  }
+  .card.action-card.kind-special {
+    background: linear-gradient(160deg, #f8e8b8 0%, #e6c878 50%, #c9a55c 100%);
+    box-shadow:
+      inset 0 0 0 2px rgba(180, 130, 30, 0.5),
+      0 0 24px rgba(232, 200, 120, 0.4),
+      0 12px 28px rgba(0, 0, 0, 0.5);
+  }
+  .card.action-card .card-kind {
+    color: #4a2a10;
+    letter-spacing: 2px;
+    font-size: 10px;
+  }
+
+  /* Monster action cards — darker, ominous */
+  .card.monster-action-card {
+    background: linear-gradient(160deg, #3a1a14 0%, #2a0e0a 60%, #1a0606 100%);
+    color: var(--parchment);
+  }
+  .card.monster-action-card::before {
+    background:
+      radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.4) 100%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.1 0 0 0 0 0.05 0 0 0 0.3 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .card.monster-action-card.kind-attack {
+    box-shadow:
+      inset 0 0 0 2px var(--blood-bright),
+      0 0 30px rgba(197, 40, 40, 0.4),
+      0 12px 28px rgba(0, 0, 0, 0.6);
+    animation: monsterPulse 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes monsterPulse {
+    from { box-shadow: inset 0 0 0 2px var(--blood-bright), 0 0 20px rgba(197, 40, 40, 0.3), 0 12px 28px rgba(0, 0, 0, 0.6); }
+    to   { box-shadow: inset 0 0 0 2px var(--blood-bright), 0 0 40px rgba(197, 40, 40, 0.7), 0 12px 28px rgba(0, 0, 0, 0.6); }
+  }
+  .card.monster-action-card .card-kind { color: var(--blood-bright); border-bottom-color: rgba(197, 40, 40, 0.4); font-size: 10px; }
+  .card.monster-action-card .card-name { color: var(--parchment); text-shadow: 0 0 12px rgba(197, 40, 40, 0.5); }
+  .card.monster-action-card .card-flavor { color: var(--parchment-dim); }
+  .card.monster-action-card .card-stats { border-top-color: rgba(197, 40, 40, 0.3); }
+  .card.monster-action-card .card-stat { background: rgba(197, 40, 40, 0.08); border-color: rgba(197, 40, 40, 0.3); }
+  .card.monster-action-card .card-stat .l { color: var(--blood-bright); }
+  .card.monster-action-card .card-stat .v { color: var(--parchment); text-shadow: none; }
+  .card.monster-action-card .card-corner.tl,
+  .card.monster-action-card .card-corner.tr { border-color: var(--blood-bright); }
+  .card.monster-action-card .card-corner.bl,
+  .card.monster-action-card .card-corner.br { border-color: var(--blood-bright); }
+
+  /* Choice indicators on card */
+  .choice-overlay {
+    position: absolute;
+    top: 24px;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 32px;
+    padding: 4px 14px;
+    border: 3px solid;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.1s;
+    z-index: 3;
+    letter-spacing: 2px;
+    transform: rotate(-12deg);
+    pointer-events: none;
+  }
+  .choice-overlay.left {
+    left: 18px;
+    color: var(--blood-bright);
+    border-color: var(--blood-bright);
+    background: rgba(255, 230, 230, 0.85);
+    transform: rotate(-18deg);
+  }
+  .choice-overlay.right {
+    right: 18px;
+    color: var(--moss);
+    border-color: var(--moss);
+    background: rgba(230, 245, 220, 0.85);
+    transform: rotate(18deg);
+  }
+
+  /* === SWIPE HINTS / ACTION LABELS === */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 4px;
+  }
+  .action-hint {
+    text-align: center;
+    padding: 10px 6px;
+    border: 1px solid;
+    border-radius: 2px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.15));
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+  }
+  .action-hint:active { transform: scale(0.96); }
+  .action-hint.left { border-color: rgba(197, 40, 40, 0.6); }
+  .action-hint.right { border-color: rgba(74, 93, 58, 0.7); }
+  .action-hint .arrow {
+    font-family: 'UnifrakturCook', serif;
+    font-size: 14px;
+    color: var(--parchment-deep);
+    letter-spacing: 2px;
+  }
+  .action-hint .label {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    margin-top: 2px;
+  }
+  .action-hint.left .label { color: #d57878; }
+  .action-hint.right .label { color: #a0c080; }
+
+  /* === LOG MESSAGE === */
+  .log {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: rgba(15, 10, 5, 0.92);
+    border: 1px solid var(--gold);
+    color: var(--parchment);
+    padding: 16px 24px;
+    border-radius: 2px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-align: center;
+    max-width: 80%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity 0.3s, transform 0.3s;
+    box-shadow: 0 0 30px rgba(201, 165, 92, 0.3);
+  }
+  .log.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  /* === MODAL (start / end) === */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 3, 2, 0.96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .modal.show { opacity: 1; pointer-events: auto; }
+  .modal-content {
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal h1 {
+    font-family: 'UnifrakturCook', serif;
+    font-size: 44px;
+    color: var(--blood-bright);
+    text-shadow: 0 0 20px rgba(197, 40, 40, 0.5), 2px 2px 0 #000;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .modal h2 {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 14px;
+    color: var(--gold);
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+  }
+  .modal p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--parchment);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .modal .summary {
+    background: rgba(232, 220, 192, 0.06);
+    border: 1px solid rgba(201, 165, 92, 0.3);
+    padding: 14px;
+    margin: 20px 0;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 13px;
+    color: var(--parchment-dim);
+    letter-spacing: 1.5px;
+    line-height: 1.8;
+  }
+  .modal .summary strong {
+    color: var(--gold-bright);
+    font-weight: normal;
+  }
+  .modal button {
+    background: linear-gradient(180deg, #2a1810, #1a0e08);
+    color: var(--gold-bright);
+    border: 1px solid var(--gold);
+    padding: 12px 32px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+  .modal button:hover {
+    background: linear-gradient(180deg, #3a2818, #2a1810);
+    box-shadow: 0 0 16px rgba(201, 165, 92, 0.4);
+  }
+  .modal .ornament {
+    font-size: 24px;
+    color: var(--gold);
+    margin: 8px 0;
+    letter-spacing: 12px;
+  }
+  .modal .phase-tag {
+    display: inline-block;
+    background: var(--blood);
+    color: var(--parchment);
+    padding: 3px 12px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+
+  .modal-content .verdict {
+    font-family: 'UnifrakturCook', serif;
+    font-size: 22px;
+    color: var(--gold-bright);
+    margin: 12px 0;
+  }
+
+  /* Damage / heal numbers floating up */
+  .floater {
+    position: absolute;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 32px;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 40;
+    animation: floatUp 1s ease-out forwards;
+    text-shadow: 2px 2px 0 #000, 0 0 12px currentColor;
+  }
+  @keyframes floatUp {
+    0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+    20% { transform: translate(-50%, -10px) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -80px) scale(1); opacity: 0; }
+  }
+  .floater.dmg { color: var(--blood-bright); }
+  .floater.heal { color: #8fb574; }
+  .floater.gold { color: var(--gold-bright); }
+
+  /* Phase indicator badge */
+  .phase-badge {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--blood-bright);
+    background: rgba(0,0,0,0.4);
+    padding: 3px 8px;
+    border: 1px solid var(--blood);
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="crest">
+    <div class="title">Dungeon Grindr</div>
+    <div class="floor" id="floorLabel">— THE GATES —</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="label">PARTY HP</div><div class="value" id="statHp">—</div></div>
+    <div class="stat"><div class="label">STAMINA</div><div class="value" id="statStamina">—</div></div>
+    <div class="stat"><div class="label">GOLD</div><div class="value" id="statGold">—</div></div>
+  </div>
+
+  <div class="party" id="party"></div>
+
+  <div class="stack-wrap">
+    <div class="enemy-display" id="enemyDisplay"></div>
+    <div class="stack" id="stack"></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="actions">
+    <div class="action-hint left" id="hintLeft">
+      <div class="arrow">← swipe left</div>
+      <div class="label" id="leftLabel">PASS</div>
+    </div>
+    <div class="action-hint right" id="hintRight">
+      <div class="arrow">swipe right →</div>
+      <div class="label" id="rightLabel">RECRUIT</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal show" id="modalStart">
+  <div class="modal-content">
+    <div class="ornament">❦ ❦ ❦</div>
+    <h1>Dungeon Grindr</h1>
+    <h2>A SWIPE-BORNE CRAWL</h2>
+    <p>The old crypt yawns. Three floors deep, the rumours say. You arrive without companions — only your wits, and a coin to call them.</p>
+    <p style="font-size:14px;">Swipe <span style="color:#d57878">left to refuse</span>, <span style="color:#a0c080">right to accept</span>. Recruit up to three. Then descend.</p>
+    <div class="ornament">✦</div>
+    <button id="btnStart">BEGIN THE DESCENT</button>
+  </div>
+</div>
+
+<div class="modal" id="modalEnd">
+  <div class="modal-content" id="endContent"></div>
+</div>
+
+<script>
+// =========================================================================
+// GAME DATA
+// =========================================================================
+
+const RECRUITS = [
+  { icon: '⚔️', name: 'Brunhilde', cls: 'Knight', hp: 18, atk: 5, flavor: 'Plate-clad and sworn to no flag but coin.' },
+  { icon: '🏹', name: 'Ysolde', cls: 'Ranger', hp: 12, atk: 6, flavor: 'Eyes like a hawk. Mood like a cornered one.' },
+  { icon: '🔮', name: 'Magister Vell', cls: 'Sorcerer', hp: 9, atk: 8, flavor: 'Speaks to no one, listens to everything.' },
+  { icon: '🗡️', name: 'Cutpurse Jin', cls: 'Rogue', hp: 11, atk: 5, flavor: 'Three knives. Two are decoys.' },
+  { icon: '🛡️', name: 'Brother Aldric', cls: 'Cleric', hp: 14, atk: 3, flavor: 'Heals the wounded. Judges the rest.' },
+  { icon: '🪓', name: 'Hrothgar', cls: 'Berserker', hp: 16, atk: 7, flavor: 'Has not slept indoors in a decade.' },
+  { icon: '🎭', name: 'The Mountebank', cls: 'Bard', hp: 10, atk: 4, flavor: 'Lies beautifully. Sings worse.' },
+  { icon: '🐺', name: 'Old Mungo', cls: 'Druid', hp: 13, atk: 5, flavor: 'Smells of wet fur and damp earth.' },
+  { icon: '⚗️', name: 'Pevra the Pale', cls: 'Alchemist', hp: 10, atk: 6, flavor: 'Her satchel clinks. Don\'t ask why.' },
+  { icon: '🦴', name: 'The Gravedigger', cls: 'Necromancer', hp: 11, atk: 7, flavor: 'Knows everyone here, somehow.' },
+  { icon: '🗝️', name: 'Felix the Lost', cls: 'Scholar', hp: 8, atk: 4, flavor: 'Has memorised three useless books.' },
+  { icon: '🌑', name: 'Veiled Lyra', cls: 'Assassin', hp: 10, atk: 8, flavor: 'You did not see her enter the tavern.' },
+];
+
+// =========================================================================
+// NAME GENERATOR DATA — pre/mid/suf syllable pools + epithets per class
+// epChance: 0–1 probability of appending " the <epithet>"
+// =========================================================================
+
+const NAME_DATA = {
+  Knight: {
+    pre: ['Ald', 'Helm', 'Brun', 'Var', 'Ulf'],
+    mid: ['gar', 'dric', 'win', 'mar', 'ric'],
+    suf: ['helm', 'wyn', 'ar', 'mund', 'ric'],
+    ep:  ['the Unyielding', 'the Iron', 'the Last', 'the Steadfast', 'the Unbroken'],
+    epChance: 0.6,
+  },
+  Ranger: {
+    pre: ['Ys', 'Bray', 'Fen', 'Wil', 'Ash'],
+    mid: ['ol', 'der', 'ow', 'en', 'mar'],
+    suf: ['de', 'wick', 'shaw', 'ford', 'fen'],
+    ep:  ['the Swift', 'the Silent', 'the Far-Eyed', 'the Keen', 'the Trackless'],
+    epChance: 0.6,
+  },
+  Sorcerer: {
+    pre: ['Mag', 'Vel', 'Sor', 'Ael', 'Zyn'],
+    mid: ['ist', 'or', 'el', 'ar', 'iv'],
+    suf: ['us', 'ix', 'ael', 'en', 'var'],
+    ep:  ['the Arcane', 'the Unbound', 'the Veilwalker', 'the Learned', 'the Fell'],
+    epChance: 0.6,
+  },
+  Rogue: {
+    pre: ['Cut', 'Slim', 'Jin', 'Pex', 'Brak'],
+    mid: ['pur', 'ny', 'sli', 'wick', 'nar'],
+    suf: ['se', 'blade', 'finger', 'hook', 'eye'],
+    ep:  ['the Quick', 'the Unseen', 'the Light-Fingered', 'the Crooked', 'the Fleet'],
+    epChance: 0.6,
+  },
+  Cleric: {
+    pre: ['Bro', 'Ald', 'Ser', 'Dom', 'Ben'],
+    mid: ['ther', 'ric', 'dic', 'van', 'mund'],
+    suf: ['ius', 'ric', 'as', 'us', 'an'],
+    ep:  ['the Devout', 'the Penitent', 'the Merciful', 'the Stern', 'the Ordained'],
+    epChance: 0.6,
+  },
+  Berserker: {
+    pre: ['Hro', 'Ulf', 'Bjor', 'Tor', 'Grim'],
+    mid: ['thgar', 'mund', 'nar', 'kel', 'var'],
+    suf: ['n', 'ar', 'ulf', 'gar', 'or'],
+    ep:  ['the Bloody', 'the Mad', 'the Unbroken', 'the Ravager', 'the Howling'],
+    epChance: 0.6,
+  },
+  Bard: {
+    pre: ['Ael', 'Tav', 'Ori', 'Sil', 'Mel'],
+    mid: ['ov', 'el', 'ar', 'iv', 'an'],
+    suf: ['i', 'wyn', 'ara', 'el', 'is'],
+    ep:  ['the Bright', 'the Merry', 'the Loquacious', 'the Tuneful', 'the Shameless'],
+    epChance: 0.25,
+  },
+  Druid: {
+    pre: ['Old', 'Mun', 'Bri', 'Wyn', 'Ern'],
+    mid: ['go', 'ath', 'wyn', 'oak', 'fen'],
+    suf: ['wood', 'moss', 'bark', 'root', 'mere'],
+    ep:  ['the Ancient', 'the Green', 'the Rootbound', 'the Unshorn', 'the Earthen'],
+    epChance: 0.6,
+  },
+  Alchemist: {
+    pre: ['Pev', 'Cor', 'Sal', 'Hex', 'Mer'],
+    mid: ['ra', 'cu', 'vi', 'ni', 'bi'],
+    suf: ['us', 'ix', 'al', 'ite', 'or'],
+    ep:  ['the Pale', 'the Measured', 'the Volatile', 'the Exact', 'the Unstable'],
+    epChance: 0.6,
+  },
+  Necromancer: {
+    pre: ['Mor', 'Veth', 'Krul', 'Sev', 'Drav'],
+    mid: ['ath', 'vel', 'ax', 'or', 'ul'],
+    suf: ['as', 'ix', 'orn', 'eth', 'vex'],
+    ep:  ['the Pallid', 'the Hollow', 'the Grave-born', 'the Undying', 'the Bleak'],
+    epChance: 0.6,
+  },
+  Scholar: {
+    pre: ['Fel', 'Osw', 'Gal', 'Per', 'Cor'],
+    mid: ['ix', 'vin', 'ot', 'mund', 'win'],
+    suf: ['us', 'ey', 'ick', 'in', 'ot'],
+    ep:  ['the Lost', 'the Obscure', 'the Footnoted', 'the Pedantic', 'the Forgotten'],
+    epChance: 0.25,
+  },
+  Assassin: {
+    pre: ['Veil', 'Shad', 'Nox', 'Sil', 'Mir'],
+    mid: ['ed', 'ow', 'en', 'ith', 'al'],
+    suf: ['ra', 'yn', 'ex', 'is', 'ar'],
+    ep:  ['the Unseen', 'the Silent', 'the Faceless', 'the Last Breath', 'the Still'],
+    epChance: 0.6,
+  },
+};
+
+// =========================================================================
+// CLASS ACTION POOLS — each class has 5 cards: 3 basic attacks, 1 block, 1 special
+// Specials cost 1 stamina. Block absorbs incoming damage this round.
+// =========================================================================
+
+const CLASS_POOLS = {
+  Knight: [
+    { kind: 'attack', emblem: '⚔️', name: 'Steel Cut',     dmg: 5, flavor: 'A clean swing.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Lunge',         dmg: 4, flavor: 'Plates clang. Steel finds gap.' },
+    { kind: 'attack', emblem: '⚔️', name: 'Pommel Strike', dmg: 3, flavor: 'Brutal but quick.' },
+    { kind: 'block',  emblem: '🛡️', name: 'Shield Wall',   block: 8, flavor: 'Nothing gets past.' },
+    { kind: 'special',emblem: '✨', name: 'Knight\'s Oath', dmg: 10, cost: 1, flavor: 'Sworn duty made manifest.' },
+  ],
+  Ranger: [
+    { kind: 'attack', emblem: '🏹', name: 'Quick Shot',    dmg: 5, flavor: 'Loosed before the breath ends.' },
+    { kind: 'attack', emblem: '🏹', name: 'Pierce',        dmg: 6, flavor: 'Through the gap in the ribs.' },
+    { kind: 'attack', emblem: '🏹', name: 'Snap Shot',     dmg: 4, flavor: 'Half-drawn. Still lethal.' },
+    { kind: 'block',  emblem: '🌿', name: 'Fade Back',     block: 5, dodge: true, flavor: 'Gone before they swing.' },
+    { kind: 'special',emblem: '🎯', name: 'Heart-Seeker',  dmg: 12, cost: 1, flavor: 'One arrow. One end.' },
+  ],
+  Sorcerer: [
+    { kind: 'attack', emblem: '✨', name: 'Mote of Flame', dmg: 5, flavor: 'A guttering ember of will.' },
+    { kind: 'attack', emblem: '⚡', name: 'Shock',         dmg: 6, flavor: 'The air cracks.' },
+    { kind: 'attack', emblem: '❄️', name: 'Frost Lance',   dmg: 5, flavor: 'It bites where it touches.' },
+    { kind: 'block',  emblem: '🔮', name: 'Ward Sigil',    block: 7, flavor: 'A glyph hums into being.' },
+    { kind: 'special',emblem: '🔥', name: 'Arcane Bolt',   dmg: 14, cost: 1, flavor: 'The room briefly glows.' },
+  ],
+  Rogue: [
+    { kind: 'attack', emblem: '🗡️', name: 'Slash',         dmg: 4, flavor: 'Quick. Mean.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Throw Dagger',  dmg: 5, flavor: 'Always one in reserve.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Gut Punch',     dmg: 4, flavor: 'Where the armor isn\'t.' },
+    { kind: 'block',  emblem: '💨', name: 'Smoke Vial',    block: 6, flavor: 'A grey cloud, then nothing.' },
+    { kind: 'special',emblem: '🌑', name: 'Backstab',      dmg: 13, cost: 1, flavor: 'It never sees you move.' },
+  ],
+  Cleric: [
+    { kind: 'attack', emblem: '🔨', name: 'Mace Swing',    dmg: 3, flavor: 'Iron for the unholy.' },
+    { kind: 'attack', emblem: '☀️', name: 'Smite',         dmg: 4, flavor: 'The light burns.' },
+    { kind: 'attack', emblem: '🔨', name: 'Mace Heavy',    dmg: 4, flavor: 'A judgement, two-handed.' },
+    { kind: 'block',  emblem: '🛡️', name: 'Bless',        block: 6, heal: 3, flavor: 'A shield of grace.' },
+    { kind: 'special',emblem: '💖', name: 'Mend',          heal: 12, cost: 1, flavor: 'Wounds knit. Pain recedes.' },
+  ],
+  Berserker: [
+    { kind: 'attack', emblem: '🪓', name: 'Hack',          dmg: 6, flavor: 'Wood splinters. Bone too.' },
+    { kind: 'attack', emblem: '🪓', name: 'Cleave',        dmg: 5, flavor: 'Wide arc. Loud.' },
+    { kind: 'attack', emblem: '🪓', name: 'Headbutt',      dmg: 4, flavor: 'Costs him a tooth, every time.' },
+    { kind: 'block',  emblem: '😤', name: 'Endure',        block: 4, flavor: 'He just takes it.' },
+    { kind: 'special',emblem: '🔥', name: 'Reckless Swing',dmg: 16, selfDmg: 3, cost: 1, flavor: 'A risk that pays in blood.' },
+  ],
+  Bard: [
+    { kind: 'attack', emblem: '🎭', name: 'Cutting Word',  dmg: 3, flavor: 'It cuts deeper than it should.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Rapier Thrust', dmg: 4, flavor: 'A flourish, then steel.' },
+    { kind: 'attack', emblem: '🎵', name: 'Discordant Note',dmg: 3, flavor: 'A note no ear should hear.' },
+    { kind: 'block',  emblem: '🎶', name: 'Lullaby',       block: 5, flavor: 'It briefly forgets you.' },
+    { kind: 'special',emblem: '🎭', name: 'Mocking Verse', dmg: 9, heal: 3, cost: 1, flavor: 'It dies of embarrassment.' },
+  ],
+  Druid: [
+    { kind: 'attack', emblem: '🌿', name: 'Thorn Whip',    dmg: 4, flavor: 'A green lash, swift.' },
+    { kind: 'attack', emblem: '🐺', name: 'Maul',          dmg: 5, flavor: 'Beast-form. Brief. Bloody.' },
+    { kind: 'attack', emblem: '🌿', name: 'Bramble',       dmg: 4, flavor: 'Roots find soft places.' },
+    { kind: 'block',  emblem: '🌳', name: 'Bark Skin',     block: 7, flavor: 'Skin turns to oak.' },
+    { kind: 'special',emblem: '🌑', name: 'Beast Form',    dmg: 12, cost: 1, flavor: 'Old Mungo is no longer Mungo.' },
+  ],
+  Alchemist: [
+    { kind: 'attack', emblem: '⚗️', name: 'Acid Flask',    dmg: 5, flavor: 'It hisses on contact.' },
+    { kind: 'attack', emblem: '💥', name: 'Bomb',          dmg: 6, flavor: 'A small, accurate ruin.' },
+    { kind: 'attack', emblem: '☠️', name: 'Poison Dart',   dmg: 4, flavor: 'A pinprick, then quiet.' },
+    { kind: 'block',  emblem: '🧪', name: 'Antidote',      block: 4, heal: 4, flavor: 'Just in time.' },
+    { kind: 'special',emblem: '💣', name: 'Greek Fire',    dmg: 13, cost: 1, flavor: 'Sticky. Burns underwater.' },
+  ],
+  Necromancer: [
+    { kind: 'attack', emblem: '🦴', name: 'Bone Spike',    dmg: 5, flavor: 'Up from below. Sudden.' },
+    { kind: 'attack', emblem: '👻', name: 'Drain',         dmg: 4, heal: 2, flavor: 'It takes. He keeps.' },
+    { kind: 'attack', emblem: '🦴', name: 'Rattle',        dmg: 4, flavor: 'Old bones answer him.' },
+    { kind: 'block',  emblem: '💀', name: 'Bone Shield',   block: 6, flavor: 'A wall of the long-dead.' },
+    { kind: 'special',emblem: '⚰️', name: 'Raise Dead',    dmg: 10, heal: 5, cost: 1, flavor: 'It rises. Briefly.' },
+  ],
+  Scholar: [
+    { kind: 'attack', emblem: '📖', name: 'Cited Curse',   dmg: 3, flavor: 'Footnoted. Devastating.' },
+    { kind: 'attack', emblem: '🗝️', name: 'Lock-pick Jab', dmg: 4, flavor: 'A surprising amount of force.' },
+    { kind: 'attack', emblem: '📜', name: 'Old Word',      dmg: 4, flavor: 'A name that should not be spoken.' },
+    { kind: 'block',  emblem: '📚', name: 'Tome Shield',   block: 5, flavor: 'Surprisingly thick.' },
+    { kind: 'special',emblem: '✨', name: 'Forbidden Rite',dmg: 11, cost: 1, flavor: 'He read it once. Once was enough.' },
+  ],
+  Assassin: [
+    { kind: 'attack', emblem: '🗡️', name: 'Silent Cut',    dmg: 5, flavor: 'No sound. No witness.' },
+    { kind: 'attack', emblem: '🌑', name: 'Shadow Step',   dmg: 6, flavor: 'Here. Then there. Then a wound.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Throat Strike', dmg: 5, flavor: 'Precise. Final.' },
+    { kind: 'block',  emblem: '🌑', name: 'Vanish',        block: 6, dodge: true, flavor: 'She is no longer where she was.' },
+    { kind: 'special',emblem: '☠️', name: 'Death Mark',    dmg: 15, cost: 1, flavor: 'A name. A breath. A body.' },
+  ],
+};
+
+// Monster action pools — each monster type rolls one card per round.
+// "wind" = no damage this round (telegraph), "guard" = also no damage, "attack" = dmg
+const MONSTER_POOLS = {
+  small: [
+    { kind: 'attack', emblem: '🦷', name: 'Bite',      dmgMult: 1.0, flavor: 'It lunges.' },
+    { kind: 'attack', emblem: '🦷', name: 'Snap',      dmgMult: 0.7, flavor: 'A quick, mean nip.' },
+    { kind: 'attack', emblem: '💢', name: 'Frenzy',    dmgMult: 1.2, flavor: 'It thrashes wildly.' },
+    { kind: 'wind',   emblem: '💨', name: 'Skitter',   flavor: 'It scurries, gathering itself.' },
+    { kind: 'guard',  emblem: '🫥', name: 'Coil',      flavor: 'It draws back, watching.' },
+  ],
+  medium: [
+    { kind: 'attack', emblem: '⚔️', name: 'Strike',    dmgMult: 1.0, flavor: 'A heavy blow.' },
+    { kind: 'attack', emblem: '🗡️', name: 'Slash',     dmgMult: 0.8, flavor: 'Claws find purchase.' },
+    { kind: 'attack', emblem: '💥', name: 'Slam',      dmgMult: 1.3, flavor: 'The whole room shakes.' },
+    { kind: 'wind',   emblem: '😤', name: 'Roar',      flavor: 'It bellows. The walls answer.' },
+    { kind: 'guard',  emblem: '🛡️', name: 'Brace',     flavor: 'It hunkers, waiting.' },
+  ],
+  large: [
+    { kind: 'attack', emblem: '🔥', name: 'Maul',      dmgMult: 1.0, flavor: 'A full-body assault.' },
+    { kind: 'attack', emblem: '💀', name: 'Crush',     dmgMult: 1.2, flavor: 'A bone-snapping blow.' },
+    { kind: 'attack', emblem: '⚡', name: 'Rend',      dmgMult: 1.4, flavor: 'It tears with terrible purpose.' },
+    { kind: 'wind',   emblem: '🌑', name: 'Gather',    flavor: 'It hisses ancient words.' },
+    { kind: 'guard',  emblem: '🛡️', name: 'Recoil',    flavor: 'It withdraws, conserving.' },
+  ],
+};
+
+const RECRUITS_OLD_PLACEHOLDER = [];
+
+// Encounters by floor difficulty (1-3)
+const ENCOUNTERS = {
+  monsters: [
+    { tier: 1, emblem: '🐀', name: 'Crypt Rat Swarm', hp: 8,  atk: 3, pool: 'small',  gold: 2, flavor: 'A heaving carpet of teeth and tail.' },
+    { tier: 1, emblem: '💀', name: 'Restless Bones',  hp: 10, atk: 4, pool: 'medium', gold: 3, flavor: 'It rises. It always rises.' },
+    { tier: 1, emblem: '🕷️', name: 'Tomb Spider',     hp: 9,  atk: 4, pool: 'small',  gold: 3, flavor: 'Eight eyes. None of them friendly.' },
+    { tier: 1, emblem: '🦇', name: 'Cave Bat Cloud',  hp: 7,  atk: 3, pool: 'small',  gold: 2, flavor: 'A storm with fangs.' },
+    { tier: 2, emblem: '👻', name: 'Wailing Shade',   hp: 14, atk: 6, pool: 'medium', gold: 5, flavor: 'It remembers a name. It thinks it is yours.' },
+    { tier: 2, emblem: '🧟', name: 'Bog Wight',       hp: 18, atk: 7, pool: 'medium', gold: 5, flavor: 'Drips. Lurches. Does not stop.' },
+    { tier: 2, emblem: '👹', name: 'Snarling Imp',    hp: 13, atk: 6, pool: 'medium', gold: 6, flavor: 'Small. Loud. Genuinely furious.' },
+    { tier: 2, emblem: '🐍', name: 'Sepulchre Serpent',hp: 16, atk: 7, pool: 'medium', gold: 6, flavor: 'It coils around the columns like rope.' },
+    { tier: 3, emblem: '🐲', name: 'Dread Wyrmlet',   hp: 24, atk: 9, pool: 'large',  gold: 12, flavor: 'Young. Already terrible.' },
+    { tier: 3, emblem: '👁️', name: 'The Watcher',     hp: 22, atk: 8, pool: 'large',  gold: 10, flavor: 'It blinks once. The room shudders.' },
+    { tier: 3, emblem: '☠️', name: 'Lich Acolyte',    hp: 26, atk: 10, pool: 'large', gold: 14, flavor: 'Once was a scholar. Took a wrong turn.' },
+  ],
+  treasures: [
+    { emblem: '💰', name: 'Hoarder\'s Coffer', gold: 8, dmg: 2, flavor: 'It is locked. It is also trapped.' },
+    { emblem: '👑', name: 'A Pauper\'s Crown', gold: 12, dmg: 3, flavor: 'Too small to wear. Too pretty to leave.' },
+    { emblem: '💎', name: 'Bloodstone Sigil', gold: 10, dmg: 2, flavor: 'Warm to the touch. Suspiciously so.' },
+    { emblem: '📜', name: 'Sealed Reliquary', gold: 9, dmg: 3, flavor: 'The wax bears a forgotten crest.' },
+    { emblem: '🗡️', name: 'Funerary Blade', gold: 7, dmg: 1, flavor: 'Buried with someone who needed it.' },
+    { emblem: '🛏️', name: 'A Quiet Alcove', rest: 'short', flavor: 'Dry. Hidden. Briefly safe.' },
+    { emblem: '🏛️', name: 'Forgotten Sanctum', rest: 'long', flavor: 'Locked from inside. The party rests deeply.' },
+  ],
+  potions: [
+    { emblem: '🧪', name: 'Verdant Draught', heal: 8, flavor: 'It tastes of moss and miracles.' },
+    { emblem: '🍷', name: 'Saint\'s Blood', heal: 10, flavor: 'Allegedly. Probably wine.' },
+    { emblem: '🫗', name: 'Witch\'s Tonic', heal: 6, stamina: 2, flavor: 'Bitter. Restorative. Suspicious.' },
+    { emblem: '🥃', name: 'Crypt-keeper\'s Brandy', heal: 5, stamina: 3, flavor: 'Older than your grandfather. Stronger too.' },
+  ],
+  events: [
+    { emblem: '🚪', name: 'A Locked Door', desc: 'Force it open?', success: { gold: 6, flavor: 'It splinters. Treasure within.' }, fail: { dmg: 4, flavor: 'The lock was a snare.' }, flavor: 'Iron-bound. Something rattles within.' },
+    { emblem: '🕳️', name: 'Yawning Pit', desc: 'Climb down?', success: { gold: 10, flavor: 'A forgotten cache.' }, fail: { dmg: 5, flavor: 'The rope frays. You land hard.' }, flavor: 'It exhales cold air.' },
+    { emblem: '⛪', name: 'Roadside Shrine', desc: 'Tithe a coin?', success: { heal: 6, flavor: 'A warmth fills the wounded.' }, fail: { dmg: 0, flavor: 'Silence. Cold silence.' }, flavor: 'The saint\'s face is worn smooth.' },
+    { emblem: '🪞', name: 'Black Mirror', desc: 'Look closely?', success: { gold: 7, heal: 3, flavor: 'It shows you a kindness.' }, fail: { dmg: 6, flavor: 'It shows you yourself.' }, flavor: 'It does not show the room behind you.' },
+    { emblem: '🔥', name: 'Watchfire', desc: 'Rest beside it?', success: { heal: 7, stamina: 2, flavor: 'You wake refreshed.' }, fail: { dmg: 3, flavor: 'Something watched you sleep.' }, flavor: 'Still burning. Recently tended.' },
+    { emblem: '⚰️', name: 'Open Sarcophagus', desc: 'Search inside?', success: { gold: 11, flavor: 'A signet ring. Gold.' }, fail: { dmg: 5, flavor: 'A hand closes around your wrist.' }, flavor: 'The lid is already askew.' },
+    { emblem: '🍖', name: 'Abandoned Stew', desc: 'Eat it?', success: { heal: 5, flavor: 'Surprisingly good.' }, fail: { dmg: 3, flavor: 'Something in it bites back.' }, flavor: 'It is still warm. Concerning.' },
+    { emblem: '👤', name: 'A Beggar in Rags', desc: 'Offer coin?', success: { gold: 5, flavor: 'He returns it threefold.' }, fail: { dmg: 0, gold: -3, flavor: 'He vanishes with your purse.' }, flavor: 'He will not meet your eye.' },
+  ],
+  bosses: [
+    { emblem: '🐉', name: 'The Old Dragon',          hp: 40, atk: 12, pool: 'large', gold: 40, flavor: 'It has waited beneath the world for an age.' },
+    { emblem: '👁️‍🗨️', name: 'The Crypt-Mind',         hp: 36, atk: 11, pool: 'large', gold: 35, flavor: 'A consciousness without a body, dreaming you here.' },
+    { emblem: '⚱️', name: 'The First Buried King',  hp: 44, atk: 13, pool: 'large', gold: 45, flavor: 'He wakes only for coronations. Or coffins.' },
+  ],
+};
+
+const FLOOR_NAMES = [
+  '— THE GATES —',
+  '— THE OSSUARY —',
+  '— THE DEEP HALLS —',
+  '— THE CHOIR PIT —',
+];
+
+// =========================================================================
+// GAME STATE
+// =========================================================================
+
+let state = null;
+
+function newGame() {
+  state = {
+    phase: 'recruit', // 'recruit' | 'dungeon' | 'combat' | 'end'
+    party: [],
+    maxPartyHp: 0,
+    stamina: 5,
+    maxStamina: 5,
+    gold: 5,
+    floor: 0, // 0 = gates / recruitment
+    floorProgress: 0,
+    floorLength: 6,
+    deck: [],
+    currentCard: null,
+    recruitsShown: 0,
+    maxRecruits: 8, // shown before forced to descend
+    minPartyToProceed: 1,
+    stats: { kills: 0, fled: 0, fellComrades: 0 },
+    combat: null, // active combat state when phase === 'combat'
+  };
+  buildRecruitDeck();
+  drawNext();
+  render();
+}
+
+function buildRecruitDeck() {
+  const shuffled = [...RECRUITS].sort(() => Math.random() - 0.5);
+  state.deck = shuffled.slice(0, state.maxRecruits).map(r => ({
+    type: 'recruit',
+    ...r,
+    currentHp: r.hp,
+  }));
+}
+
+function buildFloorDeck(floor) {
+  const tier = Math.min(floor, 3);
+  const pool = [];
+
+  // monsters appropriate to tier
+  const mons = ENCOUNTERS.monsters.filter(m => m.tier <= tier);
+  for (let i = 0; i < 3 + floor; i++) {
+    const m = mons[Math.floor(Math.random() * mons.length)];
+    pool.push({ type: 'monster', ...m });
+  }
+  // treasures
+  for (let i = 0; i < 2; i++) {
+    const t = ENCOUNTERS.treasures[Math.floor(Math.random() * ENCOUNTERS.treasures.length)];
+    pool.push({ type: 'treasure', ...t });
+  }
+  // potions
+  for (let i = 0; i < 2; i++) {
+    const p = ENCOUNTERS.potions[Math.floor(Math.random() * ENCOUNTERS.potions.length)];
+    pool.push({ type: 'potion', ...p });
+  }
+  // events
+  for (let i = 0; i < 2; i++) {
+    const e = ENCOUNTERS.events[Math.floor(Math.random() * ENCOUNTERS.events.length)];
+    pool.push({ type: 'event', ...e });
+  }
+
+  // shuffle
+  pool.sort(() => Math.random() - 0.5);
+
+  // boss at end of final floor
+  if (floor === 3) {
+    const boss = ENCOUNTERS.bosses[Math.floor(Math.random() * ENCOUNTERS.bosses.length)];
+    pool.push({ type: 'boss', ...boss });
+  }
+
+  state.deck = pool;
+  state.floorLength = pool.length;
+  state.floorProgress = 0;
+}
+
+function drawNext() {
+  if (state.phase === 'recruit') {
+    if (state.deck.length === 0 || (state.party.length >= 3)) {
+      // Force descend
+      if (state.party.length >= state.minPartyToProceed) {
+        startFloor(1);
+      } else {
+        // empty out and refill if no one recruited yet
+        buildRecruitDeck();
+        state.currentCard = state.deck.shift();
+      }
+      return;
+    }
+    state.currentCard = state.deck.shift();
+  } else if (state.phase === 'dungeon') {
+    if (state.deck.length === 0) {
+      // floor complete
+      if (state.floor >= 3) {
+        endGame(true);
+        return;
+      }
+      // rest between floors: small heal
+      const rest = Math.floor(state.maxPartyHp * 0.2);
+      healParty(rest);
+      state.stamina = Math.min(state.maxStamina, state.stamina + 2);
+      showLog(`The way deepens. You rest. (+${rest} HP, +2 stamina)`);
+      setTimeout(() => startFloor(state.floor + 1), 1400);
+      return;
+    }
+    state.currentCard = state.deck.shift();
+    state.floorProgress++;
+  }
+}
+
+function startFloor(n) {
+  state.phase = 'dungeon';
+  state.floor = n;
+  buildFloorDeck(n);
+  drawNext();
+  render();
+}
+
+// =========================================================================
+// PARTY MECHANICS
+// =========================================================================
+
+function recruit(member) {
+  state.party.push(member);
+  state.maxPartyHp += member.hp;
+  showLog(`✦ ${member.name} the ${member.cls} joins the party ✦`);
+}
+
+function partyTotalHp() {
+  return state.party.reduce((s, m) => s + Math.max(0, m.currentHp), 0);
+}
+
+function partyTotalAtk() {
+  return state.party.filter(m => m.currentHp > 0).reduce((s, m) => s + m.atk, 0);
+}
+
+function damageParty(amount) {
+  // distribute damage: front members first
+  let remaining = amount;
+  const alive = state.party.filter(m => m.currentHp > 0);
+  if (alive.length === 0) return;
+  // Spread damage roughly, with random front-loading
+  while (remaining > 0 && alive.some(m => m.currentHp > 0)) {
+    const target = alive[Math.floor(Math.random() * alive.length)];
+    if (target.currentHp <= 0) continue;
+    const hit = Math.min(target.currentHp, Math.max(1, Math.ceil(remaining / 2) + Math.floor(Math.random()*2)));
+    target.currentHp -= hit;
+    remaining -= hit;
+    if (target.currentHp <= 0) {
+      state.stats.fellComrades++;
+      showLog(`☠ ${target.name} falls. ☠`, 1400);
+    }
+  }
+  spawnFloater(`-${amount}`, 'dmg');
+  flashStat('statHp', 'flash-red');
+}
+
+function healParty(amount) {
+  let remaining = amount;
+  const alive = state.party.filter(m => m.currentHp > 0);
+  if (alive.length === 0) return;
+  // distribute heals
+  while (remaining > 0 && alive.some(m => m.currentHp < m.hp)) {
+    const target = alive.find(m => m.currentHp < m.hp);
+    if (!target) break;
+    const heal = Math.min(target.hp - target.currentHp, Math.ceil(remaining / alive.length) + 1, remaining);
+    target.currentHp += heal;
+    remaining -= heal;
+  }
+  spawnFloater(`+${amount}`, 'heal');
+  flashStat('statHp', 'flash-green');
+}
+
+// =========================================================================
+// CARD RESOLUTION
+// =========================================================================
+
+function resolveSwipe(direction) {
+  const card = state.currentCard;
+  if (!card) return;
+
+  if (state.phase === 'recruit') {
+    if (direction === 'right') {
+      recruit(card);
+      if (state.party.length >= 3) {
+        // auto-descend
+        setTimeout(() => startFloor(1), 800);
+        state.currentCard = null;
+        render();
+        return;
+      }
+    } else {
+      // pass — no effect
+    }
+    state.recruitsShown++;
+    drawNext();
+    render();
+    return;
+  }
+
+  if (state.phase === 'combat') {
+    const c = state.combat;
+    if (!c || c.finished) return; // post-victory transition in progress
+    const ac = state.currentCard;
+
+    if (ac.type === 'monsterAction') {
+      // Player has already chosen; monster card is shown as resolution preview.
+      // Either swipe direction confirms and proceeds to next round.
+      resolveMonsterCard();
+      if (combatEndCheck()) return;
+      // Advance to a fresh round
+      c.round++;
+      drawCombatRound();
+      render();
+      return;
+    }
+
+    // Player action card: pick-1-of-N. Right = play this one (round resolves).
+    // Left = pass on this card, cycle to next option. If no options remain, the
+    // last card you saw is forced.
+    if (direction === 'right') {
+      if (ac.kind === 'special' && state.stamina < (ac.cost || 1)) {
+        showLog('Not enough stamina! Pick another.');
+        return; // don't advance — player must choose another card
+      }
+      playActionCard(ac);
+      if (combatEndCheck()) return;
+      // Show the monster's incoming move as the next card; player swipes to resolve
+      const monsterPreview = c.hand.find(h => h.type === 'monsterAction');
+      state.currentCard = monsterPreview;
+      c.handIndex = c.hand.indexOf(monsterPreview);
+      render();
+    } else {
+      // Pass — cycle to next player option (without committing).
+      // Find the next 'action' card in hand after current index, wrap around.
+      const playerCards = c.hand.filter(h => h.type === 'action');
+      const currentIdx = playerCards.indexOf(ac);
+      const nextIdx = (currentIdx + 1) % playerCards.length;
+      const next = playerCards[nextIdx];
+      c.handIndex = c.hand.indexOf(next);
+      state.currentCard = next;
+      showLog(`${ac.ownerName} stands ready. Another?`);
+      render();
+    }
+    return;
+  }
+
+  if (state.phase === 'dungeon') {
+    if (direction === 'left') {
+      // FLEE
+      if (state.stamina <= 0) {
+        // forced engage
+        showLog('No stamina left! You must face it.');
+        return doEngage(card);
+      }
+      state.stamina--;
+      state.stats.fled++;
+      // small chance flee fails for monsters
+      if ((card.type === 'monster' || card.type === 'boss') && Math.random() < 0.35) {
+        const dmg = Math.max(1, Math.floor((card.atk || 4) * 0.4));
+        damageParty(dmg);
+        showLog(`${card.name} strikes as you flee! (-${dmg})`);
+      } else {
+        showLog(`You slip past the ${card.name.toLowerCase()}.`);
+      }
+    } else {
+      doEngage(card);
+      // doEngage may transition to 'combat' for monsters; don't auto-advance in that case
+      if (state.phase === 'combat') return;
+    }
+    checkDeath();
+    if (state.phase !== 'end') {
+      drawNext();
+      render();
+    }
+  }
+}
+
+function doEngage(card) {
+  switch (card.type) {
+    case 'monster':
+    case 'boss': {
+      startCombat(card);
+      return; // combat will handle gold/dmg
+    }
+    case 'treasure': {
+      if (card.rest === 'short') {
+        state.stamina = Math.min(state.maxStamina, state.stamina + 1);
+        showLog('A short rest. +1 stamina.');
+        spawnFloater('+1', 'heal');
+        break;
+      }
+      if (card.rest === 'long') {
+        state.stamina = state.maxStamina;
+        // Random HP heal: somewhere between 30%-70% of max party HP
+        const healPct = 0.3 + Math.random() * 0.4;
+        const healAmount = Math.max(1, Math.floor(state.maxPartyHp * healPct));
+        healParty(healAmount);
+        showLog(`A long rest. Stamina fully restored. +${healAmount} HP.`);
+        break;
+      }
+      if (Math.random() < 0.4 && card.dmg) {
+        damageParty(card.dmg);
+        showLog(`Trapped! -${card.dmg} HP. But you take +${card.gold} gold.`);
+      } else {
+        showLog(`+${card.gold} gold.`);
+      }
+      state.gold += card.gold;
+      spawnFloater(`+${card.gold}g`, 'gold');
+      break;
+    }
+    case 'potion': {
+      healParty(card.heal);
+      if (card.stamina) {
+        state.stamina = Math.min(state.maxStamina, state.stamina + card.stamina);
+      }
+      showLog(`The party drinks. +${card.heal} HP` + (card.stamina ? `, +${card.stamina} stamina` : ''));
+      break;
+    }
+    case 'event': {
+      const success = Math.random() < 0.55;
+      const outcome = success ? card.success : card.fail;
+      if (outcome.dmg) damageParty(outcome.dmg);
+      if (outcome.heal) healParty(outcome.heal);
+      if (outcome.gold) {
+        state.gold = Math.max(0, state.gold + outcome.gold);
+        spawnFloater(`${outcome.gold > 0 ? '+' : ''}${outcome.gold}g`, 'gold');
+      }
+      showLog(outcome.flavor);
+      break;
+    }
+  }
+}
+
+// =========================================================================
+// COMBAT — phase === 'combat'
+// =========================================================================
+
+function startCombat(monsterCard) {
+  state.phase = 'combat';
+  state.combat = {
+    monster: {
+      ...monsterCard,
+      currentHp: monsterCard.hp,
+      isBoss: monsterCard.type === 'boss',
+    },
+    round: 1,
+    hand: [],          // action cards drawn from party + monster card at end
+    handIndex: 0,      // which card in hand is currently active
+    blockThisRound: 0, // sum of block from played block cards
+    dodgeThisRound: false,
+    monsterCard: null, // the card monster will play (revealed)
+    finished: false,
+  };
+  drawCombatRound();
+  render();
+}
+
+function drawCombatRound() {
+  const c = state.combat;
+  c.blockThisRound = 0;
+  c.dodgeThisRound = false;
+  c.hand = [];
+
+  // Each living party member draws 1 card from their class pool
+  state.party.forEach(member => {
+    if (member.currentHp <= 0) return;
+    const pool = CLASS_POOLS[member.cls] || CLASS_POOLS.Knight;
+    const card = pool[Math.floor(Math.random() * pool.length)];
+    c.hand.push({
+      type: 'action',
+      ownerName: member.name,
+      ownerCls: member.cls,
+      ownerIcon: member.icon,
+      ...card,
+    });
+  });
+
+  // Monster also rolls a card
+  const mpool = MONSTER_POOLS[c.monster.pool] || MONSTER_POOLS.medium;
+  c.monsterCard = mpool[Math.floor(Math.random() * mpool.length)];
+
+  // Append the monster card to the end of the hand so player sees what's coming
+  c.hand.push({
+    type: 'monsterAction',
+    emblem: c.monsterCard.emblem,
+    name: c.monsterCard.name,
+    flavor: c.monsterCard.flavor,
+    kind: c.monsterCard.kind,
+    dmgMult: c.monsterCard.dmgMult,
+    monsterName: c.monster.name,
+    monsterEmblem: c.monster.emblem,
+  });
+
+  c.handIndex = 0;
+  state.currentCard = c.hand[0];
+}
+
+function playActionCard(card) {
+  const c = state.combat;
+  let log = '';
+
+  if (card.kind === 'special') {
+    if (state.stamina < (card.cost || 1)) {
+      // Treat as basic if no stamina — discard handled by left swipe; but if user swiped right, fall back
+      showLog('Not enough stamina! It fizzles.');
+      return;
+    }
+    state.stamina -= (card.cost || 1);
+  }
+
+  if (card.dmg) {
+    const dealt = card.dmg;
+    c.monster.currentHp -= dealt;
+    spawnFloater(`-${dealt}`, 'dmg');
+    log += `${card.ownerName}'s ${card.name}: -${dealt} HP. `;
+  }
+  if (card.heal) {
+    healParty(card.heal);
+    log += `+${card.heal} HP. `;
+  }
+  if (card.block) {
+    c.blockThisRound += card.block;
+    if (card.dodge) c.dodgeThisRound = true;
+    log += `Block ${card.block}. `;
+  }
+  if (card.selfDmg) {
+    damageParty(card.selfDmg);
+    log += `Self -${card.selfDmg}. `;
+  }
+  showLog(log.trim() || `${card.name} played.`);
+}
+
+function resolveMonsterCard() {
+  const c = state.combat;
+  const mc = c.monsterCard;
+  if (!mc) return;
+
+  if (mc.kind === 'wind' || mc.kind === 'guard') {
+    showLog(`${c.monster.name}: ${mc.name}.`);
+    return;
+  }
+
+  if (mc.kind === 'attack') {
+    if (c.dodgeThisRound) {
+      showLog(`The party slips away from ${c.monster.name}'s ${mc.name}!`);
+      return;
+    }
+    const rawDmg = Math.max(1, Math.round(c.monster.atk * (mc.dmgMult || 1)));
+    const absorbed = Math.min(c.blockThisRound, rawDmg);
+    const netDmg = rawDmg - absorbed;
+    if (absorbed > 0 && netDmg === 0) {
+      showLog(`Block holds! ${c.monster.name}'s ${mc.name} blunted entirely.`);
+    } else if (absorbed > 0) {
+      damageParty(netDmg);
+      showLog(`${c.monster.name}: ${mc.name}. Block absorbs ${absorbed}, -${netDmg} HP.`);
+    } else {
+      damageParty(rawDmg);
+      showLog(`${c.monster.name}: ${mc.name}. -${rawDmg} HP.`);
+    }
+  }
+}
+
+function combatEndCheck() {
+  const c = state.combat;
+  if (c.monster.currentHp <= 0) {
+    // Victory
+    state.gold += c.monster.gold;
+    spawnFloater(`+${c.monster.gold}g`, 'gold');
+    state.stats.kills++;
+    showLog(`${c.monster.name} falls! +${c.monster.gold} gold`, 1400);
+    c.finished = true;
+    setTimeout(() => {
+      state.phase = 'dungeon';
+      state.combat = null;
+      checkDeath();
+      if (state.phase !== 'end') {
+        drawNext();
+        render();
+      }
+    }, 1000);
+    return true;
+  }
+  if (state.party.every(m => m.currentHp <= 0)) {
+    endGame(false);
+    return true;
+  }
+  return false;
+}
+
+function advanceCombatCard() {
+  const c = state.combat;
+  c.handIndex++;
+  if (c.handIndex >= c.hand.length) {
+    // round over: resolve monster card now (already last in hand)
+    // Actually monster was the last card; if it was swiped through, we already resolved it.
+    // So now check end and draw next round
+    if (combatEndCheck()) return;
+    c.round++;
+    drawCombatRound();
+    render();
+  } else {
+    state.currentCard = c.hand[c.handIndex];
+    render();
+  }
+}
+
+function checkDeath() {
+  if (state.party.every(m => m.currentHp <= 0)) {
+    endGame(false);
+  }
+}
+
+function endGame(victory) {
+  state.phase = 'end';
+  const content = document.getElementById('endContent');
+  const survived = state.party.filter(m => m.currentHp > 0);
+  if (victory) {
+    content.innerHTML = `
+      <div class="ornament">✦ ❦ ✦</div>
+      <h1 style="color: var(--gold-bright);">VICTORY</h1>
+      <h2>YOU HAVE PLUMBED THE DEPTHS</h2>
+      <p>The First Buried King falls silent. Daylight, when you find it, will feel impossibly strange.</p>
+      <div class="summary">
+        <strong>${survived.length}</strong> companion${survived.length === 1 ? '' : 's'} survived<br>
+        <strong>${state.stats.kills}</strong> foes vanquished<br>
+        <strong>${state.gold}</strong> gold recovered<br>
+        <strong>${state.stats.fled}</strong> times fled, <strong>${state.stats.fellComrades}</strong> fallen
+      </div>
+      <button id="btnRestart">DESCEND ANEW</button>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="ornament">☠ ☠ ☠</div>
+      <h1>A PARTY WIPE</h1>
+      <h2>THE CRYPT KEEPS WHAT IT CLAIMS</h2>
+      <p>The torches gutter. No one returns to tell the tale. Somewhere above, a tavern-keeper crosses off your tab.</p>
+      <div class="verdict">Floor ${state.floor} of 3</div>
+      <div class="summary">
+        <strong>${state.stats.kills}</strong> foes vanquished<br>
+        <strong>${state.gold}</strong> gold lost to the dark<br>
+        <strong>${state.stats.fellComrades}</strong> comrades fallen<br>
+        <strong>${state.stats.fled}</strong> times fled
+      </div>
+      <button id="btnRestart">TRY AGAIN</button>
+    `;
+  }
+  document.getElementById('modalEnd').classList.add('show');
+  document.getElementById('btnRestart').onclick = () => {
+    document.getElementById('modalEnd').classList.remove('show');
+    newGame();
+  };
+}
+
+// =========================================================================
+// RENDER
+// =========================================================================
+
+function render() {
+  // floor label
+  if (state.phase === 'recruit') {
+    document.getElementById('floorLabel').textContent = '— TAVERN AT THE GATES —';
+  } else if (state.phase === 'combat' && state.combat) {
+    const c = state.combat;
+    document.getElementById('floorLabel').textContent = `— COMBAT · ROUND ${c.round} —`;
+  } else {
+    document.getElementById('floorLabel').textContent =
+      (FLOOR_NAMES[state.floor] || '— ???? —') + ` · Room ${state.floorProgress}/${state.floorLength}`;
+  }
+
+  // Combat mode toggle on stack wrap
+  const stackWrap = document.querySelector('.stack-wrap');
+  if (state.phase === 'combat') {
+    stackWrap.classList.add('combat-mode');
+    renderEnemyDisplay();
+  } else {
+    stackWrap.classList.remove('combat-mode');
+    document.getElementById('enemyDisplay').innerHTML = '';
+  }
+
+  // stats
+  const hp = partyTotalHp();
+  document.getElementById('statHp').textContent = state.phase === 'recruit' ? '—' : `${hp}/${state.maxPartyHp}`;
+  document.getElementById('statStamina').textContent = state.phase === 'recruit' ? '—' : `${state.stamina}`;
+  document.getElementById('statGold').textContent = state.gold;
+
+  // party
+  const partyEl = document.getElementById('party');
+  partyEl.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const m = state.party[i];
+    if (m) {
+      const div = document.createElement('div');
+      div.className = 'member' + (m.currentHp <= 0 ? ' dead' : '');
+      div.innerHTML = `
+        <div class="icon">${m.icon}</div>
+        <div class="name">${m.name.split(' ')[0]}</div>
+        <div class="hp">${Math.max(0, m.currentHp)}/${m.hp}</div>
+      `;
+      partyEl.appendChild(div);
+    } else {
+      const div = document.createElement('div');
+      div.className = 'member-empty';
+      div.textContent = '—';
+      partyEl.appendChild(div);
+    }
+  }
+
+  // action hints
+  const cc = state.currentCard;
+  if (state.phase === 'recruit') {
+    document.getElementById('leftLabel').textContent = 'PASS';
+    document.getElementById('rightLabel').textContent = 'RECRUIT';
+  } else if (state.phase === 'combat') {
+    if (cc?.type === 'monsterAction') {
+      document.getElementById('leftLabel').textContent = 'BRACE';
+      document.getElementById('rightLabel').textContent = 'BRACE';
+    } else {
+      document.getElementById('leftLabel').textContent = 'PASS';
+      document.getElementById('rightLabel').textContent = 'PLAY';
+    }
+  } else {
+    document.getElementById('leftLabel').textContent =
+      cc?.type === 'potion' || cc?.type === 'treasure' ? 'LEAVE IT' : 'FLEE';
+    document.getElementById('rightLabel').textContent =
+      cc?.type === 'monster' || cc?.type === 'boss' ? 'FIGHT'
+      : cc?.type === 'treasure' ? (cc?.rest ? 'REST' : 'TAKE IT')
+      : cc?.type === 'potion' ? 'DRINK'
+      : 'ENGAGE';
+  }
+
+  renderStack();
+}
+
+function renderEnemyDisplay() {
+  const c = state.combat;
+  if (!c) return;
+  const el = document.getElementById('enemyDisplay');
+  const hpPct = Math.max(0, Math.min(100, (c.monster.currentHp / c.monster.hp) * 100));
+  const mc = c.monsterCard;
+
+  let intentLabel = '?';
+  let intentIcon = '?';
+  let intentDmg = '';
+  if (mc) {
+    intentIcon = mc.emblem;
+    if (mc.kind === 'attack') {
+      intentLabel = mc.name.toUpperCase();
+      const dmg = Math.max(1, Math.round(c.monster.atk * (mc.dmgMult || 1)));
+      intentDmg = `-${dmg}`;
+    } else if (mc.kind === 'wind') {
+      intentLabel = `WIND-UP · ${mc.name.toUpperCase()}`;
+    } else {
+      intentLabel = `GUARD · ${mc.name.toUpperCase()}`;
+    }
+  }
+
+  el.innerHTML = `
+    <div class="enemy-portrait">${c.monster.emblem}</div>
+    <div class="enemy-info">
+      <div class="enemy-name">${c.monster.name}</div>
+      <div class="enemy-hp-bar">
+        <div class="enemy-hp-fill" style="width:${hpPct}%"></div>
+        <div class="enemy-hp-label">${Math.max(0, c.monster.currentHp)} / ${c.monster.hp}</div>
+      </div>
+      <div class="enemy-intent">
+        <span class="intent-icon">${intentIcon}</span>
+        <span class="intent-label">${intentLabel}</span>
+        <span class="intent-dmg">${intentDmg}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderStack() {
+  const stack = document.getElementById('stack');
+  stack.innerHTML = '';
+  if (!state.currentCard) return;
+
+  if (state.phase === 'combat' && state.combat) {
+    const c = state.combat;
+    if (state.currentCard.type === 'monsterAction') {
+      // Resolution: full-screen monster card so the hit feels weighty
+      const el = makeCardEl(state.currentCard, 0);
+      // Override the combat-mode constraints so this card is large and centered
+      el.style.width = '78%';
+      el.style.height = '95%';
+      el.style.transform = 'translate(-50%, -50%) scale(1)';
+      stack.appendChild(el);
+      attachSwipe(el);
+      return;
+    }
+    // Choosing phase: fan out the three player cards
+    const playerCards = c.hand.filter(h => h.type === 'action');
+    const activeIdx = playerCards.indexOf(state.currentCard);
+    if (activeIdx === -1) return;
+    // Build positions: active = center (depth 0), next = right (depth 1), prev = left (depth 2)
+    const positions = [];
+    positions.push({ card: playerCards[activeIdx], slot: 'center' });
+    if (playerCards.length >= 2) {
+      const right = playerCards[(activeIdx + 1) % playerCards.length];
+      positions.push({ card: right, slot: 'right' });
+    }
+    if (playerCards.length >= 3) {
+      const left = playerCards[(activeIdx + 2) % playerCards.length];
+      positions.push({ card: left, slot: 'left' });
+    }
+
+    // Render in reverse so center is on top
+    positions.slice().reverse().forEach(({ card, slot }) => {
+      const el = makeCardEl(card, 0);
+      // Apply fan transforms
+      el.style.zIndex = slot === 'center' ? 10 : 5;
+      el.style.opacity = slot === 'center' ? 1 : 0.7;
+      el.style.transition = 'transform 0.35s cubic-bezier(0.2,0.8,0.2,1), opacity 0.35s';
+      if (slot === 'left') {
+        el.style.transform = 'translate(-95%, -42%) rotate(-14deg) scale(0.85)';
+        el.style.filter = 'brightness(0.85)';
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', () => {
+          state.combat.handIndex = state.combat.hand.indexOf(card);
+          state.currentCard = card;
+          render();
+        });
+      } else if (slot === 'right') {
+        el.style.transform = 'translate(-5%, -42%) rotate(14deg) scale(0.85)';
+        el.style.filter = 'brightness(0.85)';
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', () => {
+          state.combat.handIndex = state.combat.hand.indexOf(card);
+          state.currentCard = card;
+          render();
+        });
+      } else {
+        el.style.transform = 'translate(-50%, -50%) scale(1)';
+      }
+      stack.appendChild(el);
+      if (slot === 'center') attachSwipe(el);
+    });
+    return;
+  }
+
+  // Non-combat: original stacked layout
+  const visible = [state.currentCard, ...state.deck.slice(0, 2)];
+  visible.slice(0, 3).slice().reverse().forEach((card, idx) => {
+    const stackSize = Math.min(visible.length, 3);
+    const depth = stackSize - 1 - idx; // 0 = top
+    const el = makeCardEl(card, depth);
+    stack.appendChild(el);
+    if (depth === 0) attachSwipe(el);
+  });
+}
+
+function makeCardEl(card, depth) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.style.transform = `translateY(${depth * 6}px) scale(${1 - depth * 0.04})`;
+  el.style.zIndex = 10 - depth;
+  el.style.opacity = depth === 0 ? 1 : depth === 1 ? 0.92 : depth === 2 ? 0.65 : 0.5;
+
+  let kindLabel = '';
+  let emblem = '', name = '', flavor = '', stats = '', effect = '';
+  let extraClass = '';
+  let actionBadge = '';
+
+  // Bold-wrap numeric values in effect strings
+  const e = (s) => s;
+  const B = (n) => `<strong>${n}</strong>`;
+
+  if (card.type === 'recruit') {
+    kindLabel = `· ${card.cls.toUpperCase()} ·`;
+    emblem = card.icon;
+    name = card.name;
+    flavor = card.flavor;
+    effect = `Joins your party with ${B(card.hp)} HP and ${B(card.atk)} base attack.`;
+    stats = `
+      <div class="card-stat"><div class="l">HP</div><div class="v">${card.hp}</div></div>
+      <div class="card-stat"><div class="l">ATTACK</div><div class="v">${card.atk}</div></div>
+    `;
+  } else if (card.type === 'monster' || card.type === 'boss') {
+    kindLabel = card.type === 'boss' ? '· FINAL ADVERSARY ·' : '· ADVERSARY ·';
+    emblem = card.emblem;
+    name = card.name;
+    flavor = card.flavor;
+    effect = `Fight for ${B(card.gold + 'g')}. Has ${B(card.hp)} HP and strikes for up to ${B(card.atk)} per round.`;
+    stats = `
+      <div class="card-stat"><div class="l">HP</div><div class="v">${card.hp}</div></div>
+      <div class="card-stat"><div class="l">ATTACK</div><div class="v">${card.atk}</div></div>
+      <div class="card-stat"><div class="l">BOUNTY</div><div class="v">${card.gold}g</div></div>
+    `;
+  } else if (card.type === 'treasure') {
+    if (card.rest === 'short' || card.rest === 'long') {
+      kindLabel = '· RESPITE ·';
+      emblem = card.emblem;
+      name = card.name;
+      flavor = card.flavor;
+      if (card.rest === 'long') {
+        effect = `Refills stamina to max and heals ${B('30–70%')} of party HP.`;
+        stats = `
+          <div class="card-stat"><div class="l">STAMINA</div><div class="v desc">Full Refill</div></div>
+          <div class="card-stat"><div class="l">HEALS</div><div class="v desc">30–70% HP</div></div>
+        `;
+      } else {
+        effect = `Restores ${B('+1')} stamina.`;
+        stats = `
+          <div class="card-stat"><div class="l">RESTORES</div><div class="v desc">+1 Stamina</div></div>
+        `;
+      }
+    } else {
+      kindLabel = '· TREASURE ·';
+      emblem = card.emblem;
+      name = card.name;
+      flavor = card.flavor;
+      effect = `Take ${B('+' + card.gold + 'g')}. ${B('40%')} chance of a trap dealing ${B(card.dmg)} damage.`;
+      stats = `
+        <div class="card-stat"><div class="l">REWARD</div><div class="v">${card.gold}g</div></div>
+        <div class="card-stat"><div class="l">PERIL</div><div class="v">?</div></div>
+      `;
+    }
+  } else if (card.type === 'potion') {
+    kindLabel = '· REFRESHMENT ·';
+    emblem = card.emblem;
+    name = card.name;
+    flavor = card.flavor;
+    effect = card.stamina
+      ? `Heals ${B('+' + card.heal)} HP and restores ${B('+' + card.stamina)} stamina.`
+      : `Heals ${B('+' + card.heal)} HP across the party.`;
+    stats = `
+      <div class="card-stat"><div class="l">HEALS</div><div class="v">+${card.heal}</div></div>
+      <div class="card-stat"><div class="l">VIGOR</div><div class="v">${card.stamina ? '+' + card.stamina : '—'}</div></div>
+    `;
+  } else if (card.type === 'event') {
+    kindLabel = '· OMEN ·';
+    emblem = card.emblem;
+    name = card.name;
+    flavor = card.flavor;
+    effect = `${card.desc} ${B('55%')} chance of fortune.`;
+    stats = `
+      <div class="card-stat"><div class="l">CHOICE</div><div class="v desc">${card.desc}</div></div>
+    `;
+  } else if (card.type === 'action') {
+    // Player action card during combat
+    extraClass = 'action-card kind-' + card.kind;
+    const ownerTag = `${card.ownerIcon} ${card.ownerName.split(' ')[0]} · ${card.ownerCls.toUpperCase()}`;
+    kindLabel = ownerTag;
+    const badgeLabel = card.kind === 'attack' ? 'ATTACK'
+                      : card.kind === 'block' ? 'BLOCK'
+                      : 'SPECIAL';
+    actionBadge = `<div class="action-badge badge-${card.kind}">${badgeLabel}</div>`;
+    emblem = card.emblem;
+    name = card.name;
+    flavor = card.flavor;
+
+    // Build the mechanical effect line
+    const parts = [];
+    if (card.dmg) parts.push(`Deals ${B(card.dmg)} damage`);
+    if (card.block) parts.push(card.dodge ? `Dodges the next attack and absorbs ${B(card.block)}` : `Absorbs up to ${B(card.block)} damage this round`);
+    if (card.heal) parts.push(`heals ${B('+' + card.heal)} HP`);
+    if (card.selfDmg) parts.push(`costs ${B(card.selfDmg)} self-damage`);
+    let effectMain = parts.length ? parts.join(', ') + '.' : '';
+    // Capitalize first letter
+    if (effectMain) effectMain = effectMain[0].toUpperCase() + effectMain.slice(1);
+    if (card.kind === 'special') {
+      effectMain += ` Costs ${B(card.cost || 1)} stamina.`;
+    }
+    effect = effectMain;
+
+    let bits = [];
+    if (card.dmg) bits.push(`<div class="card-stat"><div class="l">DAMAGE</div><div class="v">${card.dmg}</div></div>`);
+    if (card.block) bits.push(`<div class="card-stat"><div class="l">BLOCK</div><div class="v">${card.block}</div></div>`);
+    if (card.heal) bits.push(`<div class="card-stat"><div class="l">HEAL</div><div class="v">+${card.heal}</div></div>`);
+    if (card.selfDmg) bits.push(`<div class="card-stat"><div class="l">SELF</div><div class="v">-${card.selfDmg}</div></div>`);
+    if (card.kind === 'special') bits.push(`<div class="card-stat"><div class="l">STAMINA</div><div class="v">${card.cost || 1}</div></div>`);
+    stats = bits.join('');
+  } else if (card.type === 'monsterAction') {
+    extraClass = 'monster-action-card kind-' + card.kind;
+    kindLabel = `· ${card.monsterEmblem} ${card.monsterName.toUpperCase()} STRIKES ·`;
+    actionBadge = `<div class="action-badge badge-monster">${card.kind === 'attack' ? 'STRIKE' : card.kind === 'wind' ? 'WIND-UP' : 'GUARD'}</div>`;
+    emblem = card.emblem;
+    name = card.name;
+    flavor = card.flavor;
+    if (card.kind === 'attack') {
+      // Estimate damage if we have combat context
+      const c = state.combat;
+      const est = c ? Math.max(1, Math.round(c.monster.atk * (card.dmgMult || 1))) : '?';
+      effect = `Hits for ${B(est)} damage unless blocked or dodged.`;
+      stats = `<div class="card-stat"><div class="l">INCOMING</div><div class="v">-${est}</div></div>`;
+    } else if (card.kind === 'wind') {
+      effect = `No damage this round — but it's gathering itself.`;
+      stats = `<div class="card-stat"><div class="l">TELEGRAPH</div><div class="v desc">No damage</div></div>`;
+    } else {
+      effect = `No damage this round — it braces defensively.`;
+      stats = `<div class="card-stat"><div class="l">DEFENSIVE</div><div class="v desc">No damage</div></div>`;
+    }
+  }
+
+  if (extraClass) el.classList.add(...extraClass.split(' ').filter(Boolean));
+
+  el.innerHTML = `
+    <div class="card-corner tl"></div>
+    <div class="card-corner tr"></div>
+    <div class="card-corner bl"></div>
+    <div class="card-corner br"></div>
+    <div class="choice-overlay left">REFUSE</div>
+    <div class="choice-overlay right">ACCEPT</div>
+    ${actionBadge}
+    <div class="card-content">
+      <div class="card-kind">${kindLabel}</div>
+      <div class="card-emblem">${emblem}</div>
+      <div class="card-name">${name}</div>
+      <div class="card-flavor">"${flavor}"</div>
+      ${effect ? `<div class="card-effect">${effect}</div>` : ''}
+      <div class="card-stats">${stats}</div>
+    </div>
+  `;
+
+  // Customize overlay labels per phase/type
+  const left = el.querySelector('.choice-overlay.left');
+  const right = el.querySelector('.choice-overlay.right');
+  if (state.phase === 'recruit') {
+    left.textContent = 'PASS';
+    right.textContent = 'RECRUIT';
+  } else if (card.type === 'action') {
+    left.textContent = 'SKIP';
+    right.textContent = 'PLAY';
+  } else if (card.type === 'monsterAction') {
+    left.textContent = 'BRACE';
+    right.textContent = 'BRACE';
+  } else if (card.type === 'monster' || card.type === 'boss') {
+    left.textContent = 'FLEE';
+    right.textContent = 'FIGHT';
+  } else if (card.type === 'treasure') {
+    left.textContent = 'LEAVE';
+    right.textContent = card.rest ? 'REST' : 'TAKE';
+  } else if (card.type === 'potion') {
+    left.textContent = 'SAVE';
+    right.textContent = 'DRINK';
+  } else if (card.type === 'event') {
+    left.textContent = 'IGNORE';
+    right.textContent = 'YES';
+  }
+
+  return el;
+}
+
+// =========================================================================
+// SWIPE GESTURES
+// =========================================================================
+
+function attachSwipe(el) {
+  let startX = 0, startY = 0, currentX = 0, currentY = 0, dragging = false, pointerId = null;
+
+  const leftOverlay = el.querySelector('.choice-overlay.left');
+  const rightOverlay = el.querySelector('.choice-overlay.right');
+
+  // Detect if this card uses combat-mode centering (translate(-50%,-50%) base)
+  const isCombatCenter = document.querySelector('.stack-wrap')?.classList.contains('combat-mode');
+  const baseTranslate = isCombatCenter ? 'translate(-50%, -50%) ' : '';
+  // Cache the original (resting) transform so we can restore it on snap-back
+  const restingTransform = el.style.transform || '';
+
+  function onDown(e) {
+    if (state.phase === 'end') return;
+    dragging = true;
+    el.classList.add('dragging');
+    const p = e.touches ? e.touches[0] : e;
+    startX = p.clientX; startY = p.clientY;
+    currentX = 0; currentY = 0;
+    if (e.pointerId !== undefined) {
+      pointerId = e.pointerId;
+      el.setPointerCapture?.(pointerId);
+    }
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    const p = e.touches ? e.touches[0] : e;
+    currentX = p.clientX - startX;
+    currentY = p.clientY - startY;
+    const rot = currentX / 18;
+    el.style.transform = `${baseTranslate}translate(${currentX}px, ${currentY * 0.3}px) rotate(${rot}deg)`;
+    const ratio = Math.min(1, Math.abs(currentX) / 110);
+    if (currentX > 20) {
+      rightOverlay.style.opacity = ratio;
+      leftOverlay.style.opacity = 0;
+    } else if (currentX < -20) {
+      leftOverlay.style.opacity = ratio;
+      rightOverlay.style.opacity = 0;
+    } else {
+      leftOverlay.style.opacity = 0;
+      rightOverlay.style.opacity = 0;
+    }
+    e.preventDefault?.();
+  }
+
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    el.classList.remove('dragging');
+    const threshold = 110;
+    if (Math.abs(currentX) > threshold) {
+      const dir = currentX > 0 ? 'right' : 'left';
+      const flyX = (currentX > 0 ? 1 : -1) * (window.innerWidth + 200);
+      const rot = (currentX > 0 ? 1 : -1) * 30;
+      el.style.transform = `${baseTranslate}translate(${flyX}px, ${currentY}px) rotate(${rot}deg)`;
+      el.style.opacity = 0;
+      setTimeout(() => resolveSwipe(dir), 240);
+    } else {
+      el.style.transform = restingTransform;
+      leftOverlay.style.opacity = 0;
+      rightOverlay.style.opacity = 0;
+    }
+  }
+
+  el.addEventListener('pointerdown', onDown);
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', onUp);
+  el.addEventListener('pointercancel', onUp);
+  el.addEventListener('pointerleave', (e) => { if (dragging) onUp(); });
+
+  // Also handle button tap hints
+  document.getElementById('hintLeft').onclick = () => triggerSwipe('left');
+  document.getElementById('hintRight').onclick = () => triggerSwipe('right');
+}
+
+function triggerSwipe(dir) {
+  const top = document.querySelector('.stack .card:last-child');
+  if (!top || state.phase === 'end') return;
+  const flyX = (dir === 'right' ? 1 : -1) * (window.innerWidth + 200);
+  const rot = (dir === 'right' ? 1 : -1) * 30;
+  const ov = top.querySelector('.choice-overlay.' + dir);
+  if (ov) ov.style.opacity = 1;
+  top.style.transform = `translate(${flyX}px, 0) rotate(${rot}deg)`;
+  top.style.opacity = 0;
+  setTimeout(() => resolveSwipe(dir), 240);
+}
+
+// =========================================================================
+// EFFECTS / FEEDBACK
+// =========================================================================
+
+let logTimeout;
+function showLog(msg, duration = 1100) {
+  const el = document.getElementById('log');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(logTimeout);
+  logTimeout = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function spawnFloater(text, kind) {
+  const stack = document.querySelector('.stack-wrap');
+  const f = document.createElement('div');
+  f.className = 'floater ' + kind;
+  f.textContent = text;
+  f.style.left = '50%';
+  f.style.top = '50%';
+  stack.appendChild(f);
+  setTimeout(() => f.remove(), 1000);
+}
+
+function flashStat(id, cls) {
+  const el = document.getElementById(id);
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 400);
+}
+
+// =========================================================================
+// INIT
+// =========================================================================
+
+document.getElementById('btnStart').onclick = () => {
+  document.getElementById('modalStart').classList.remove('show');
+  newGame();
+};
+
+// Prevent scroll bounce on touch
+document.body.addEventListener('touchmove', (e) => {
+  if (e.target.closest('.card')) e.preventDefault();
+}, { passive: false });
+
+</script>
+</body>
+</html>
