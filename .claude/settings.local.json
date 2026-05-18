@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(superpowers:brainstorming)",
+      "Bash(npm --version)",
+      "Skill(superpowers:executing-plans)",
+      "PowerShell(New-Item *)",
+      "Bash(npm test *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npx vite *)",
+      "Bash(npm install *)",
+      "Bash(npx cap *)",
+      "Bash(where keytool *)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\keystore\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"Directory ready\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\\\\bin\\\\keytool.exe\" -genkey -v -keystore \"C:\\\\keystore\\\\dungeon_grindr.jks\" -alias dungeon_grindr -keyalg RSA -keysize 2048 -validity 10000 -storepass changeme123 -keypass changeme123 -dname \"CN=Dungeon Grindr, OU=App, O=DungeonGrindr, L=Unknown, S=Unknown, C=US\" 2>&1)",
+      "Bash(git check-ignore *)"
+    ]
+  }
+}

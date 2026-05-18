@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(adb devices *)",
+      "PowerShell(adb devices *)",
+      "PowerShell(adb *)",
+      "PowerShell(Get-PnpDevice *)",
+      "PowerShell(ls C:\\\\Users\\\\sulle\\\\claude_projects\\\\dungeon_grindr\\\\android\\\\app\\\\src\\\\main\\\\res | Where-Object { $_.Name -match \"mipmap\" })",
+      "PowerShell(cd \"C:\\\\Users\\\\sulle\\\\claude_projects\\\\dungeon_grindr\" && Invoke-WebRequest -Uri \"https://fonts.gstatic.com/s/rubikdirt/v16/LDI2apCSOBg7S-QT7pb8A-zpSpJpSA.woff2\" -OutFile \"scripts/RubikDirt.woff2\" -UseBasicParsing; \\(Get-Item \"scripts/RubikDirt.woff2\"\\).Length)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:executing-plans)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Skill(superpowers:finishing-a-development-branch)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('scripts', {}\\)\\)\")",
+      "Bash(npm test *)",
+      "Bash(git mv *)",
+      "Bash(cat .gitignore)",
+      "Bash(du -sh files.zip)"
+    ]
+  }
+}

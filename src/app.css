@@ -12,6 +12,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
 
 html, body {
   height: 100%;
@@ -71,7 +72,7 @@ body::after {
   margin-bottom: 4px;
 }
 .crest .title {
-  font-family: 'UnifrakturCook', serif;
+  font-family: 'Rubik Distressed', 'UnifrakturCook', serif;
   font-size: 20px;
   color: var(--blood-bright);
   letter-spacing: 1px;

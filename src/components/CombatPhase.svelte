@@ -43,10 +43,10 @@
           <div class="monster-card-prompt">Resolve {c.monster.name}'s move:</div>
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <div class="monster-card-swipe" on:click={onMonsterSwipe}>
+          <button class="monster-card-swipe" on:click={onMonsterSwipe}>
             <div class="mc-name">{c.monsterCard?.name}</div>
             <div class="mc-hint">tap to resolve</div>
-          </div>
+          </button>
         </div>
       {:else}
         <div class="round-label">Round {c.round}</div>
@@ -104,6 +104,10 @@
     text-align: center;
     cursor: pointer;
     background: rgba(139,26,26,0.1);
+    color: inherit;
+    font-family: inherit;
+    width: 100%;
+    display: block;
   }
   .mc-name { font-family: var(--font-display, serif); font-size: 1rem; margin-bottom: 6px; }
   .mc-hint { font-size: 0.65rem; opacity: 0.5; }
