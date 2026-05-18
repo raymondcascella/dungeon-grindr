@@ -808,10 +808,10 @@
     line-height: 1;
   }
   .modal h2 {
-    font-family: 'IM Fell English SC', serif;
-    font-size: 14px;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 18px;
     color: var(--gold);
-    letter-spacing: 4px;
+    letter-spacing: 2px;
     margin-bottom: 24px;
   }
   .modal p {
@@ -827,10 +827,10 @@
     border: 1px solid rgba(201, 165, 92, 0.3);
     padding: 14px;
     margin: 20px 0;
-    font-family: 'IM Fell English SC', serif;
+    font-family: 'UnifrakturCook', serif;
     font-size: 13px;
     color: var(--parchment-dim);
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     line-height: 1.8;
   }
   .modal .summary strong {
@@ -842,9 +842,9 @@
     color: var(--gold-bright);
     border: 1px solid var(--gold);
     padding: 12px 32px;
-    font-family: 'IM Fell English SC', serif;
-    font-size: 14px;
-    letter-spacing: 3px;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 15px;
+    letter-spacing: 1px;
     cursor: pointer;
     margin-top: 16px;
     transition: all 0.2s;
@@ -865,9 +865,9 @@
     background: var(--blood);
     color: var(--parchment);
     padding: 3px 12px;
-    font-family: 'IM Fell English SC', serif;
-    font-size: 11px;
-    letter-spacing: 3px;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 12px;
+    letter-spacing: 1px;
     margin-bottom: 12px;
   }
 
@@ -897,6 +897,18 @@
   .floater.dmg { color: var(--blood-bright); }
   .floater.heal { color: #8fb574; }
   .floater.gold { color: var(--gold-bright); }
+
+  /* Monster hit flash overlay */
+  .monster-hit-flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 45;
+    background: radial-gradient(ellipse at center, rgba(197, 40, 40, 0.55) 0%, rgba(80, 8, 8, 0.75) 100%);
+    opacity: 1;
+    transition: opacity 5s ease-out;
+  }
+  .monster-hit-flash.fade { opacity: 0; }
 
   /* Phase indicator badge */
   .phase-badge {
@@ -1355,6 +1367,7 @@ function drawNext() {
       healParty(rest);
       state.stamina = Math.min(state.maxStamina, state.stamina + 2);
       showLog(`The way deepens. You rest. (+${rest} HP, +2 stamina)`);
+      state.currentCard = null;
       setTimeout(() => startFloor(state.floor + 1), 1400);
       return;
     }
@@ -1461,6 +1474,7 @@ function resolveSwipe(direction) {
     if (ac.type === 'monsterAction') {
       // Player has already chosen; monster card is shown as resolution preview.
       // Either swipe direction confirms and proceeds to next round.
+      clearMonsterResolveTimer();
       resolveMonsterCard();
       if (combatEndCheck()) return;
       // Advance to a fresh round
@@ -1725,6 +1739,7 @@ function combatEndCheck() {
     state.stats.kills++;
     showLog(`${c.monster.name} falls! +${c.monster.gold} gold`, 1400);
     c.finished = true;
+    clearMonsterResolveTimer();
     setTimeout(() => {
       state.phase = 'dungeon';
       state.combat = null;
@@ -1943,6 +1958,23 @@ function renderStack() {
       el.style.transform = 'translate(-50%, -50%) scale(1)';
       stack.appendChild(el);
       attachSwipe(el);
+
+      // Flash overlay that fades over 5 seconds
+      const flash = document.createElement('div');
+      flash.className = 'monster-hit-flash';
+      document.querySelector('.stack-wrap').appendChild(flash);
+      requestAnimationFrame(() => requestAnimationFrame(() => flash.classList.add('fade')));
+      setTimeout(() => flash.remove(), 5200);
+
+      // Auto-resolve after 2 seconds so the player doesn't have to swipe
+      clearMonsterResolveTimer();
+      monsterResolveTimer = setTimeout(() => {
+        monsterResolveTimer = null;
+        if (state.phase === 'combat' && state.currentCard?.type === 'monsterAction') {
+          resolveSwipe('right');
+        }
+      }, 2000);
+
       return;
     }
     // Choosing phase: fan out the three player cards
@@ -2295,6 +2327,15 @@ function triggerSwipe(dir) {
 // =========================================================================
 
 let logTimeout;
+let monsterResolveTimer = null;
+
+function clearMonsterResolveTimer() {
+  if (monsterResolveTimer) {
+    clearTimeout(monsterResolveTimer);
+    monsterResolveTimer = null;
+  }
+}
+
 function showLog(msg, duration = 1100) {
   const el = document.getElementById('log');
   el.textContent = msg;
