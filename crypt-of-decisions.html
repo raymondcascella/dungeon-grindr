@@ -2303,6 +2303,17 @@ function showLog(msg, duration = 1100) {
   logTimeout = setTimeout(() => el.classList.remove('show'), duration);
 }
 
+function generateName(cls) {
+  const d = NAME_DATA[cls];
+  if (!d) throw new Error('Unknown class: ' + cls);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const useMid = Math.random() < 0.5;
+  const useEp  = Math.random() < d.epChance;
+  let name = pick(d.pre) + (useMid ? pick(d.mid) : '') + pick(d.suf);
+  if (useEp) name += ' ' + pick(d.ep);
+  return name;
+}
+
 function spawnFloater(text, kind) {
   const stack = document.querySelector('.stack-wrap');
   const f = document.createElement('div');
