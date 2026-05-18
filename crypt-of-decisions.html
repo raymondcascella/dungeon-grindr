@@ -1282,11 +1282,11 @@ function newGame() {
 
 function buildRecruitDeck() {
   const shuffled = [...RECRUITS].sort(() => Math.random() - 0.5);
-  state.deck = shuffled.slice(0, state.maxRecruits).map(r => ({
-    type: 'recruit',
-    ...r,
-    currentHp: r.hp,
-  }));
+  state.deck = shuffled.slice(0, state.maxRecruits).map(r => {
+    let name = r.name;
+    try { name = generateName(r.cls); } catch (_) {}
+    return { type: 'recruit', ...r, name, currentHp: r.hp };
+  });
 }
 
 function buildFloorDeck(floor) {
